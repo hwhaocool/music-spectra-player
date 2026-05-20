@@ -1,6 +1,7 @@
 #include "playlist.h"
 #include <algorithm>
 #include <filesystem>
+#include "unicode_utils.h"
 
 namespace fs = std::filesystem;
 
@@ -8,7 +9,8 @@ void Playlist::addFile(const std::string& path)
 {
     Entry e;
     e.path = path;
-    e.displayName = fs::path(path).filename().string();
+     // 修复：纯字符串提取文件名，不经过 fs::path 窄字符构造
+    e.displayName = utf8DisplayName(path);
     entries_.push_back(std::move(e));
 }
 

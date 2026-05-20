@@ -41,6 +41,9 @@ public:
     const RingBuffer& pcmRing() const { return pcmRing_; }
 
 private:
+    // 不加锁的内部版本（调用方必须已持有 mtx_）
+    void stopLocked();
+
     // capture 回调
     static void dataCallback(ma_device* pDevice, void* pOutput,
                              const void* pInput, uint32_t frameCount);

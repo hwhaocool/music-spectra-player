@@ -1,6 +1,7 @@
 #include "app.h"
 #include <iostream>
 #include <filesystem>
+#include "unicode_utils.h" 
 
 namespace fs = std::filesystem;
 
@@ -153,17 +154,25 @@ void App::dropCallback(GLFWwindow* /*win*/, int count, const char** paths)
 void App::processDrop()
 {
     if (dropQueue_.empty()) return;
+
     for (auto& p : dropQueue_) {
-        fs::path fp(p);
-        if (fp.extension() == ".mp3" || fp.extension() == ".wav" ||
-            fp.extension() == ".ogg" || fp.extension() == ".flac") {
+        // 修复：通过 utf8Path 正确构造 fs::path，extension 检查才能生效
+        auto fp = utf8Path(p);
+        auto ext = fp.extension().string();
+        // 统一转小写比较
+        for (auto& c : ext) c = (char)std::tolower((unsigned char)c);
+
+        if (ext == ".mp3" || ext == ".wav" ||
+            ext == ".ogg" || ext == ".flac") {
             playlist_.addFile(p);
-            std::cout << "[拖拽] Added: " << p << "\n";
+            // 修复：用原始 UTF-8 字符串直接输出（配合 setupConsoleUtf8）
+            std::cout << "[Drop] Added: " << p << "\n";
+        } else {
+            std::cout << "[Drop] Skipped (unsupported): " << p << "\n";
         }
     }
     dropQueue_.clear();
 
-    // 如果当前没有在播放，自动播放第一首
     if (!audio_.isPlaying() && playlist_.size() > 0) {
         playTrack(playlist_.currentIndex());
     }

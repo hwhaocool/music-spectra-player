@@ -52,6 +52,37 @@ bool AudioEngine::init()
     return true;
 }
 
+// ── 内部版本：不加锁，调用方必须已持有 mtx_ ──
+void AudioEngine::stopLocked()
+{
+    if (sound_) {
+        ma_sound_stop(sound_);
+        ma_sound_uninit(sound_);
+        delete sound_;
+        sound_ = nullptr;
+    }
+    loaded_.store(false);
+    playing_.store(false);
+}
+
+// ── 公开版本：加锁后委托 ──
+void AudioEngine::stop()
+{
+    std::lock_guard<std::mutex> lk(mtx_);
+    stopLocked();
+}
+
+// void AudioEngine::stop() {
+//     std::lock_guard<std::mutex> lk(mtx_);
+//     if (sound_) {
+//         ma_sound_uninit(sound_);
+//         delete sound_;
+//         sound_ = nullptr;
+//     }
+//     loaded_.store(false);
+//     playing_.store(false);
+// }
+
 void AudioEngine::shutdown()
 {
     stop();
@@ -63,7 +94,9 @@ void AudioEngine::shutdown()
 bool AudioEngine::loadAndPlay(const std::string& path)
 {
     std::lock_guard<std::mutex> lk(mtx_);
-    stop();
+
+    // 关键修复：调用 stopLocked() 而非 stop()，避免死锁
+    stopLocked();
 
     sound_ = new ma_sound;
     if (ma_sound_init_from_file(engine_, path.c_str(), 0, nullptr, nullptr, sound_) != MA_SUCCESS) {
@@ -96,16 +129,7 @@ void AudioEngine::resume() {
     }
 }
 
-void AudioEngine::stop() {
-    std::lock_guard<std::mutex> lk(mtx_);
-    if (sound_) {
-        ma_sound_uninit(sound_);
-        delete sound_;
-        sound_ = nullptr;
-    }
-    loaded_.store(false);
-    playing_.store(false);
-}
+
 
 bool AudioEngine::isPlaying() const { return playing_.load(); }
 
