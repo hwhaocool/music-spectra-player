@@ -1,6 +1,6 @@
 #pragma once
 #include "audio_engine.h"
-#include "visualizer.h"
+#include "vis.h"
 #include "bloom.h"
 #include "particles.h"
 #include "playlist.h"

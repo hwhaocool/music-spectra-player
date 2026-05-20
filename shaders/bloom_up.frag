@@ -26,6 +26,6 @@ void main()
 
     vec3 upsampled = (e * 4.0 + (b+d+f+h) * 2.0 + (a+c+g+i)) / 16.0;
 
-    vec3 existing = texture(uDest, vUV).rgb;
-    FragColor = vec4(existing + upsampled, 1.0);
+    //vec3 existing = texture(uDest, vUV).rgb;
+    FragColor = vec4(upsampled, 1.0);
 }

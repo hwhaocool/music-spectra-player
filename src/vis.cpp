@@ -1,4 +1,4 @@
-#include "visualizer.h"
+#include "vis.h"
 #include "audio_engine.h"
 #include "math_utils.h"
 #include <cmath>

@@ -61,7 +61,7 @@ add_executable(${PROJECT_NAME}
     src/main.cpp
     src/fft.cpp
     src/audio_engine.cpp
-    src/visualizer.cpp
+    src/vis.cpp
     src/bloom.cpp
     src/particles.cpp
     src/playlist.cpp
@@ -75,7 +75,9 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${GLAD_DIR}/include
     ${IMGUI_DIR}
     ${IMGUI_DIR}/backends
-    ${MINIAUDIO_DIR})
+    ${MINIAUDIO_DIR}
+    ${CMAKE_SOURCE_DIR}/third_party/icons
+)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw opengl32)
 

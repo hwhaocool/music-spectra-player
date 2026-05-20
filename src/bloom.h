@@ -12,17 +12,14 @@ public:
     GLuint apply(GLuint sceneTex, float strength);
     void destroy();
 
-    GLuint compositeTexture() const { return mipChain_[0].tex; }
+    GLuint compositeTexture() const { return compositeOutTex_; }
 
     GLuint sceneFBO()        const { return sceneFBO_; }
     GLuint sceneTexture()    const { return sceneTex_; }
-    GLuint compositeFBO()    const { return mipChain_.empty() ? 0 : mipChain_[0].fbo; }
+    GLuint compositeFBO()    const { return compositeOutFBO_; }
 
-    // 新增：获取 composite 纹理尺寸
     void compositeSize(int& w, int& h) const {
-        if (mipChain_.empty()) { w = h = 0; return; }
-        w = mipChain_[0].w;
-        h = mipChain_[0].h;
+        w = compositeOutW_; h = compositeOutH_;
     }
 
 
@@ -38,7 +35,14 @@ private:
     std::vector<Mip> mipChain_;
     GLuint quadVAO_ = 0;
 
+
+    GLuint compositeOutFBO_ = 0, compositeOutTex_ = 0;
+    int compositeOutW_ = 0, compositeOutH_ = 0;
+
     void createMipChain(int w, int h, int levels);
     void destroyMipChain();
+    void createCompositeTarget(int w, int h);
+    void destroyCompositeTarget();
     void createQuad();
+    void createCompositeOutput(int w, int h);
 };

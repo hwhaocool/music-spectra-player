@@ -42,9 +42,18 @@ bool App::init(int w, int h)
     // ── 子系统 ──
     if (!audio_.init()) return false;
     if (!vis_.init(1024, 128)) return false;
-    if (!bloom_.init(w, h, 5)) return false;
+    // if (!bloom_.init(w, h, 5)) return false;
     if (!particles_.init(2000)) return false;
     if (!ui_.init(window_)) return false;
+
+    // ── Bloom 按 viewport 尺寸初始化 ──
+    int initVpW = w - (int)kLeftPanelW;
+    int initVpH = h - (int)kControlsH;
+    if (initVpW < 1) initVpW = 1;
+    if (initVpH < 1) initVpH = 1;
+    if (!bloom_.init(initVpW, initVpH, 5)) return false;
+    lastVpW_ = initVpW;
+    lastVpH_ = initVpH;
 
     // 添加示例播放列表
     playlist_.addFile("example.mp3");
@@ -79,27 +88,23 @@ void App::run()
         if (fbW != winW_ || fbH != winH_) {
             winW_ = fbW;
             winH_ = fbH;
-
-            // bloom_.resize(winW_, winH_);    // Bloom 始终跟全窗口尺寸
+            // ← 注意：这里 不 再 resize bloom
         }
 
-        // ── 计算右侧面板 viewport（屏幕坐标 → 像素坐标）──
         float dpiScale = (winSizeW > 0) ? ((float)fbW / (float)winSizeW) : 1.f;
 
+        // ── 右侧面板 viewport ──
         float specScreenW = (float)winSizeW - kLeftPanelW;
         float specScreenH = (float)winSizeH - kControlsH;
         if (specScreenW < 1.f) specScreenW = 1.f;
         if (specScreenH < 1.f) specScreenH = 1.f;
 
         int vpX = (int)(kLeftPanelW * dpiScale);
-
-        // int vpY = (int)(kControlsH  * dpiScale);
-        int vpY = 0;
-
+        int vpY = (int)(kControlsH  * dpiScale);
         int vpW = (int)(specScreenW * dpiScale);
         int vpH = (int)(specScreenH * dpiScale);
 
-        // ── 仅 viewport 变化时重建 Bloom（避免每帧分配显存）──
+        // ── Bloom 按 viewport 尺寸重建（关键！）──
         if (vpW != lastVpW_ || vpH != lastVpH_) {
             lastVpW_ = vpW;
             lastVpH_ = vpH;
@@ -113,19 +118,15 @@ void App::run()
         float autoBarMax = shortEdge * 0.25f;
 
         // ============================================================
-        //  1. 渲染到 Bloom 场景 FBO（全窗口 尺寸）
+        //  1. 渲染频谱到 sceneFBO（尺寸 = vpW × vpH）
         // ============================================================
         glBindFramebuffer(GL_FRAMEBUFFER, bloom_.sceneFBO());
 
-        // 先清除整个 FBO
+        // sceneFBO 就是 viewport 大小，全画面绘制
         glViewport(0, 0, vpW, vpH);
         glClearColor(0.03f, 0.03f, 0.06f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // 只在右侧面板区域绘制频谱
-        glViewport(vpX, vpY, vpW, vpH);
-
-        // 正交投影：以 viewport 屏幕尺寸为坐标系，中心 (0,0)
         float halfW = specScreenW * 0.5f;
         float halfH = specScreenH * 0.5f;
         Mat4 proj   = Mat4::ortho(-halfW, halfW, -halfH, halfH);
@@ -134,43 +135,31 @@ void App::run()
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-
-        // Bug 1 修复：把自适应 barMaxHeight 传入
         vis_.draw(proj.ptr(), 0.f, 0.f, autoRadius, autoBarMax, time_);
-
         particles_.update(dt, 0.f, 0.f, autoRadius, audio_);
         particles_.draw(proj.ptr());
-
         glDisable(GL_BLEND);
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // ============================================================
-        //  2. Bloom 后处理（全窗口 FBO → 全尺寸处理）
+        //  2. Bloom 后处理（FBO = viewport 尺寸）
         // ============================================================
         bloom_.apply(bloom_.sceneTexture(), bloomStr_);
 
         // ============================================================
-        //  3. 将 composite 中对应的频谱区域 blit 到屏幕
+        //  3. Blit 到屏幕右侧面板
+        //     composite ≈ vpW/2 × vpH/2，整体搬移
         // ============================================================
-        // composite (mipChain_[0]) 尺寸约为 sceneFBO 的 1/2
-        // 需要将 sceneFBO 中的 viewport 坐标按比例映射到 composite 坐标
-        GLuint compFBO = bloom_.compositeFBO();
         int compW = 0, compH = 0;
         bloom_.compositeSize(compW, compH);
 
-        float scaleX = (winW_ > 0) ? ((float)compW / (float)vpW) : 0.5f;
-        float scaleY = (winH_ > 0) ? ((float)compH / (float)vpH) : 0.5f;
-
-        int srcX0 = 0;
-        int srcY0 = 0;
-        int srcX1 = compW;
-        int srcY1 = compH;
-
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, compFBO);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, bloom_.compositeFBO());
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
         glBlitFramebuffer(
-            srcX0, srcY0, srcX1, srcY1,          // src: composite 中的对应区域
-            vpX,   vpY,   vpX + vpW, vpY + vpH, // dst: 屏幕上的右侧面板区域
+            0, 0, compW, compH,                // src：composite 全范围
+            vpX, vpY, vpX + vpW, vpY + vpH,   // dst：屏幕右侧面板
             GL_COLOR_BUFFER_BIT, GL_LINEAR);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
