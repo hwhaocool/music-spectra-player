@@ -121,8 +121,8 @@ void App::run()
 
         // ui_.draw(*this);
         int winSizeW, winSizeH;
-glfwGetWindowSize(window_, &winSizeW, &winSizeH);
-ui_.draw(*this, winSizeW, winSizeH);
+        glfwGetWindowSize(window_, &winSizeW, &winSizeH);
+        ui_.draw(*this, winSizeW, winSizeH);
 
 
         ui_.endFrame();
