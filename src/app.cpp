@@ -117,7 +117,14 @@ void App::run()
 
         // ── 4. ImGui 叠加 ──
         ui_.beginFrame();
-        ui_.draw(*this);
+
+
+        // ui_.draw(*this);
+        int winSizeW, winSizeH;
+glfwGetWindowSize(window_, &winSizeW, &winSizeH);
+ui_.draw(*this, winSizeW, winSizeH);
+
+
         ui_.endFrame();
 
         glfwSwapBuffers(window_);

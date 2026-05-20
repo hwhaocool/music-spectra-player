@@ -1,5 +1,4 @@
 #pragma once
-#include <string>
 
 class App;
 
@@ -9,18 +8,18 @@ public:
     bool init(void* glfwWindow);
     void shutdown();
     void beginFrame();
-    void draw(App& app);
+    void draw(App& app, int windowWidth, int windowHeight);
     void endFrame();
 
-    // Drag‑Drop 回调
-    void setDropCount(int n) { dropCount_ = n; }
-
 private:
-    void drawPlaylist(App& app);
-    void drawPlayerControls(App& app);
+    void drawLeftPanel(App& app, float winW, float winH);
+    void drawControls(App& app, float winW, float winH);
     void drawSettings(App& app);
 
-    int  dropCount_ = 0;
-    bool showSettings_ = false;
-    float volumeSlider_ = 0.8f;
+    float volumeSlider_    = 0.8f;
+    bool  showSettings_    = false;
+
+    // 布局常量
+    float leftPanelWidth_  = 280.f;
+    float controlsHeight_  = 110.f;
 };
