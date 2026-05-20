@@ -58,6 +58,9 @@ private:
     int lastVpW_ = 0;
     int lastVpH_ = 0;
 
+    // 频谱区域 颜色
+    float kClearColor[4] = {0.f, 0.f, 0.f, 1.f};
+
     // 拖拽队列
     std::vector<std::string> dropQueue_;
 };

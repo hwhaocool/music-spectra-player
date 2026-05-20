@@ -59,7 +59,7 @@ bool App::init(int w, int h)
     playlist_.addFile("example.mp3");
 
     // 默认背景
-    glClearColor(0.03f, 0.03f, 0.06f, 1.f);
+    glClearColor(kClearColor[0], kClearColor[1], kClearColor[2], kClearColor[3]);
     glEnable(GL_MULTISAMPLE);
 
     return true;
@@ -124,7 +124,7 @@ void App::run()
 
         // sceneFBO 就是 viewport 大小，全画面绘制
         glViewport(0, 0, vpW, vpH);
-        glClearColor(0.03f, 0.03f, 0.06f, 1.f);
+        glClearColor(kClearColor[0], kClearColor[1], kClearColor[2], kClearColor[3]);
         glClear(GL_COLOR_BUFFER_BIT);
 
         float halfW = specScreenW * 0.5f;
