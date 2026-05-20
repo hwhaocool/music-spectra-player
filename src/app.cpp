@@ -22,7 +22,11 @@ bool App::init(int w, int h)
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     window_ = glfwCreateWindow(w, h, "Music Visualizer", nullptr, nullptr);
-    if (!window_) { std::cerr << "Window creation failed\n"; glfwTerminate(); return false; }
+    if (!window_) {
+        std::cerr << "Window creation failed\n";
+        glfwTerminate(); return false;
+    }
+
     glfwMakeContextCurrent(window_);
     glfwSwapInterval(1); // VSync
 
@@ -52,6 +56,7 @@ bool App::init(int w, int h)
     return true;
 }
 
+
 void App::run()
 {
     float lastTime = (float)glfwGetTime();
@@ -65,71 +70,122 @@ void App::run()
         lastTime  = now;
         time_     = now;
 
-        // 窗口 resize
+        // ── 窗口尺寸 ──
+        int winSizeW, winSizeH;
+        glfwGetWindowSize(window_, &winSizeW, &winSizeH);
+
         int fbW, fbH;
         glfwGetFramebufferSize(window_, &fbW, &fbH);
         if (fbW != winW_ || fbH != winH_) {
-            winW_ = fbW; winH_ = fbH;
-            bloom_.resize(winW_, winH_);
-            glViewport(0, 0, winW_, winH_);
+            winW_ = fbW;
+            winH_ = fbH;
+
+            // bloom_.resize(winW_, winH_);    // Bloom 始终跟全窗口尺寸
         }
 
-        // ── 1. 渲染到 Bloom 场景 FBO ──
-        GLuint sceneFBO = bloom_.sceneFBO();
-        glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
-        glViewport(0, 0, winW_, winH_);
+        // ── 计算右侧面板 viewport（屏幕坐标 → 像素坐标）──
+        float dpiScale = (winSizeW > 0) ? ((float)fbW / (float)winSizeW) : 1.f;
+
+        float specScreenW = (float)winSizeW - kLeftPanelW;
+        float specScreenH = (float)winSizeH - kControlsH;
+        if (specScreenW < 1.f) specScreenW = 1.f;
+        if (specScreenH < 1.f) specScreenH = 1.f;
+
+        int vpX = (int)(kLeftPanelW * dpiScale);
+
+        // int vpY = (int)(kControlsH  * dpiScale);
+        int vpY = 0;
+
+        int vpW = (int)(specScreenW * dpiScale);
+        int vpH = (int)(specScreenH * dpiScale);
+
+        // ── 仅 viewport 变化时重建 Bloom（避免每帧分配显存）──
+        if (vpW != lastVpW_ || vpH != lastVpH_) {
+            lastVpW_ = vpW;
+            lastVpH_ = vpH;
+            if (vpW > 0 && vpH > 0)
+                bloom_.resize(vpW, vpH);
+        }
+
+        // ── 自适应尺寸 ──
+        float shortEdge  = (specScreenW < specScreenH) ? specScreenW : specScreenH;
+        float autoRadius = shortEdge * 0.30f;
+        float autoBarMax = shortEdge * 0.25f;
+
+        // ============================================================
+        //  1. 渲染到 Bloom 场景 FBO（全窗口 尺寸）
+        // ============================================================
+        glBindFramebuffer(GL_FRAMEBUFFER, bloom_.sceneFBO());
+
+        // 先清除整个 FBO
+        glViewport(0, 0, vpW, vpH);
         glClearColor(0.03f, 0.03f, 0.06f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // 投影矩阵（正交）
-        float halfW = winW_ * 0.5f;
-        float halfH = winH_ * 0.5f;
-        Mat4 proj   = Mat4::ortho(-halfW, halfW, -halfH, halfH);
-        float cx    = 0.f;
-        float cy    = 0.f;
+        // 只在右侧面板区域绘制频谱
+        glViewport(vpX, vpY, vpW, vpH);
 
-        // 更新频谱
+        // 正交投影：以 viewport 屏幕尺寸为坐标系，中心 (0,0)
+        float halfW = specScreenW * 0.5f;
+        float halfH = specScreenH * 0.5f;
+        Mat4 proj   = Mat4::ortho(-halfW, halfW, -halfH, halfH);
+
         vis_.update(dt, audio_);
 
-        // 绘制频谱柱
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-        vis_.draw(proj.ptr(), cx, cy, vis_.radius_, time_);
 
-        // 绘制粒子
-        particles_.update(dt, cx, cy, vis_.radius_, audio_);
+        // Bug 1 修复：把自适应 barMaxHeight 传入
+        vis_.draw(proj.ptr(), 0.f, 0.f, autoRadius, autoBarMax, time_);
+
+        particles_.update(dt, 0.f, 0.f, autoRadius, audio_);
         particles_.draw(proj.ptr());
 
         glDisable(GL_BLEND);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        // ── 2. Bloom 后处理 ──
-        GLuint sceneTex = bloom_.sceneTexture();
-        bloom_.apply(sceneTex, bloomStr_);
+        // ============================================================
+        //  2. Bloom 后处理（全窗口 FBO → 全尺寸处理）
+        // ============================================================
+        bloom_.apply(bloom_.sceneTexture(), bloomStr_);
 
-        // ── 3. 将合成结果 blit 到默认帧缓冲 ──
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, bloom_.compositeFBO());
+        // ============================================================
+        //  3. 将 composite 中对应的频谱区域 blit 到屏幕
+        // ============================================================
+        // composite (mipChain_[0]) 尺寸约为 sceneFBO 的 1/2
+        // 需要将 sceneFBO 中的 viewport 坐标按比例映射到 composite 坐标
+        GLuint compFBO = bloom_.compositeFBO();
+        int compW = 0, compH = 0;
+        bloom_.compositeSize(compW, compH);
+
+        float scaleX = (winW_ > 0) ? ((float)compW / (float)vpW) : 0.5f;
+        float scaleY = (winH_ > 0) ? ((float)compH / (float)vpH) : 0.5f;
+
+        int srcX0 = 0;
+        int srcY0 = 0;
+        int srcX1 = compW;
+        int srcY1 = compH;
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, compFBO);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        glBlitFramebuffer(0, 0, winW_, winH_,
-                          0, 0, winW_, winH_,
-                          GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        glBlitFramebuffer(
+            srcX0, srcY0, srcX1, srcY1,          // src: composite 中的对应区域
+            vpX,   vpY,   vpX + vpW, vpY + vpH, // dst: 屏幕上的右侧面板区域
+            GL_COLOR_BUFFER_BIT, GL_LINEAR);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        // ── 4. ImGui 叠加 ──
+        // ============================================================
+        //  4. ImGui 覆盖层
+        // ============================================================
+        glViewport(0, 0, fbW, fbH);
         ui_.beginFrame();
-
-
-        // ui_.draw(*this);
-        int winSizeW, winSizeH;
-        glfwGetWindowSize(window_, &winSizeW, &winSizeH);
         ui_.draw(*this, winSizeW, winSizeH);
-
-
         ui_.endFrame();
 
         glfwSwapBuffers(window_);
     }
 }
+
 
 void App::shutdown()
 {

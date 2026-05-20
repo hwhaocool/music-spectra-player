@@ -15,8 +15,15 @@ public:
     GLuint compositeTexture() const { return mipChain_[0].tex; }
 
     GLuint sceneFBO()        const { return sceneFBO_; }
-GLuint sceneTexture()    const { return sceneTex_; }
-GLuint compositeFBO()    const { return mipChain_.empty() ? 0 : mipChain_[0].fbo; }
+    GLuint sceneTexture()    const { return sceneTex_; }
+    GLuint compositeFBO()    const { return mipChain_.empty() ? 0 : mipChain_[0].fbo; }
+
+    // 新增：获取 composite 纹理尺寸
+    void compositeSize(int& w, int& h) const {
+        if (mipChain_.empty()) { w = h = 0; return; }
+        w = mipChain_[0].w;
+        h = mipChain_[0].h;
+    }
 
 
 private:

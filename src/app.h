@@ -32,6 +32,12 @@ public:
     // 文件拖拽
     static void dropCallback(GLFWwindow* win, int count, const char** paths);
 
+    // 左侧面板 宽度
+    static constexpr float kLeftPanelW  = 280.f;
+
+    // 播放控制台 高度
+    static constexpr float kControlsH   = 150.f;
+
 private:
     void processDrop();
 
@@ -47,6 +53,10 @@ private:
 
     float bloomStr_  = 0.6f;
     float time_      = 0.f;
+
+    // 上一帧的 viewport 尺寸，避免每帧重建 Bloom
+    int lastVpW_ = 0;
+    int lastVpH_ = 0;
 
     // 拖拽队列
     std::vector<std::string> dropQueue_;

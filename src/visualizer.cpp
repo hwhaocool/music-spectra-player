@@ -78,12 +78,12 @@ void Visualizer::update(float dt, AudioEngine& audio)
 }
 
 void Visualizer::draw(const float* projMatrix, float cx, float cy,
-                      float radius, float time)
+                      float radius, float barMaxHeight, float time)
 {
     shader_.use();
     shader_.setMat4("uProjection", projMatrix);
     shader_.setFloat("uRadius",        radius);
-    shader_.setFloat("uBarMaxHeight",  barMaxHeight_);
+    shader_.setFloat("uBarMaxHeight",  barMaxHeight);
     shader_.setFloat("uBarWidth",      barWidthRad_);
     shader_.setFloat("uTime",          time);
 

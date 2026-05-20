@@ -16,8 +16,9 @@ public:
     Visualizer() = default;
     bool init(int fftSize = 1024, int numBars = 128);
     void update(float dt, AudioEngine& audio);
+    
     void draw(const float* projMatrix, float cx, float cy,
-              float radius, float time);
+              float radius, float barMaxHeight, float time);
     void destroy();
 
     int   numBars()     const { return numBars_; }

@@ -6,6 +6,7 @@
 #include <imgui_impl_opengl3.h>
 #include <GLFW/glfw3.h>
 #include <cstdio>
+#include "IconsFontAwesome6.h"
 
 // ── 工具：格式化秒数为 mm:ss ──
 static void formatTime(char* buf, size_t len, float seconds)
@@ -20,6 +21,50 @@ static void formatTime(char* buf, size_t len, float seconds)
 //  初始化
 // ==========================================================
 
+void setupFonts()
+{
+    ImGuiIO& io = ImGui::GetIO();
+
+    // 主字体
+    io.Fonts->AddFontFromFileTTF(
+        "third_party/fonts/Inter-Regular.ttf",
+        18.0f);
+
+    // 合并中文字体（fallback 链）
+    {
+        ImFontConfig cfg;
+        cfg.MergeMode = true;
+
+        if (!io.Fonts->AddFontFromFileTTF(
+                "C:\\Windows\\Fonts\\msyh.ttc", 18.0f, &cfg,
+                io.Fonts->GetGlyphRangesChineseFull())) {
+            io.Fonts->AddFontFromFileTTF(
+                "C:\\Windows\\Fonts\\simsun.ttc", 18.0f, &cfg,
+                io.Fonts->GetGlyphRangesChineseFull());
+        }
+    }
+
+    // 合并 FontAwesome
+    {
+        static const ImWchar icons_ranges[] =
+        {
+            ICON_MIN_FA,
+            ICON_MAX_16_FA,
+            0
+        };
+
+        ImFontConfig cfg;
+        cfg.MergeMode = true;
+        cfg.PixelSnapH = true;
+
+        io.Fonts->AddFontFromFileTTF(
+            "third_party/fonts/fa-solid-900.ttf",
+            16.0f,
+            &cfg,
+            icons_ranges);
+    }
+}
+
 bool UI::init(void* glfwWin)
 {
     IMGUI_CHECKVERSION();
@@ -28,15 +73,8 @@ bool UI::init(void* glfwWin)
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.IniFilename = nullptr;  // 禁用 imgui.ini 持久化
 
-    // Load font (MS YaHei for Chinese characters; falls back gracefully)
-    if (!io.Fonts->AddFontFromFileTTF(
-            "C:\\Windows\\Fonts\\msyh.ttc", 18.0f, nullptr,
-            io.Fonts->GetGlyphRangesChineseFull())) {
-        // Fallback: try another common Chinese font, then default
-        io.Fonts->AddFontFromFileTTF(
-            "C:\\Windows\\Fonts\\simsun.ttc", 18.0f, nullptr,
-            io.Fonts->GetGlyphRangesChineseFull());
-    }
+    setupFonts();
+    
 
     // ── 全局样式 ──
     ImGui::StyleColorsDark();
@@ -117,8 +155,9 @@ void UI::draw(App& app, int windowWidth, int windowHeight)
     drawLeftPanel(app, winW, winH);
     drawControls(app, winW, winH);
 
-    if (showSettings_)
+    if (showSettings_) {
         drawSettings(app);
+    }
 }
 
 // ==========================================================
@@ -137,7 +176,7 @@ void UI::drawLeftPanel(App& app, float winW, float winH)
 
     // 固定到左侧，完全不透明
     ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(leftPanelWidth_, winH), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(App::kLeftPanelW, winH), ImGuiCond_Always);
 
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.05f, 0.05f, 0.08f, 1.f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.f, 16.f));
@@ -228,8 +267,18 @@ void UI::drawLeftPanel(App& app, float winW, float winH)
     ImGui::Spacing();
 
     // 设置按钮
-    if (ImGui::Button("设置", ImVec2(-1, 28)))
-        showSettings_ = !showSettings_;
+    // ── 关键修复：只在窗口未打开时允许点击打开 ──
+    if (!showSettings_) {
+        if (ImGui::Button("Settings", ImVec2(-1, 28)))
+            showSettings_ = true;   // 单向：只能打开
+    } else {
+        // 窗口已打开：按钮显示为"关闭"样式，点击直接关闭
+        ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.18f, 0.18f, 0.30f, 1.f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,  ImVec4(0.28f, 0.12f, 0.12f, 1.f));
+        if (ImGui::Button("Settings", ImVec2(-1, 28)))
+            showSettings_ = false;  // 单向：只能关闭
+        ImGui::PopStyleColor(2);
+    }
 
     ImGui::End();
     ImGui::PopStyleVar();   // WindowPadding
@@ -240,95 +289,394 @@ void UI::drawLeftPanel(App& app, float winW, float winH)
 //  右下角控制条
 // ==========================================================
 
+// void drawControlsV1(App& app, float winW, float winH)
+// {
+//     ImGuiWindowFlags flags =
+//         ImGuiWindowFlags_NoMove       |
+//         ImGuiWindowFlags_NoResize     |
+//         ImGuiWindowFlags_NoCollapse   |
+//         ImGuiWindowFlags_NoTitleBar;
+
+//     float x = leftPanelWidth_;
+//     float y = winH - App::kControlsH;
+//     float w = winW - App::kLeftPanelW;
+
+//     ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_Always);
+//     ImGui::SetNextWindowSize(ImVec2(w, App::kControlsH), ImGuiCond_Always);
+
+//     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.05f, 0.05f, 0.08f, 0.95f));
+//     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.f, 10.f));
+
+//     ImGui::Begin("##Controls", nullptr, flags);
+
+//     auto& engine   = app.audio();
+//     auto& playlist = app.playlist();
+
+//     // ── 第一行：进度条 ──
+//     float cur  = engine.getCursorSeconds();
+//     float dur  = engine.getDurationSeconds();
+//     float prog = (dur > 0.01f) ? (cur / dur) : 0.f;
+
+//     ImGui::PushStyleColor(ImGuiCol_PlotHistogram,       ImVec4(0.0f, 0.85f, 0.85f, 1.f));
+//     ImGui::PushStyleColor(ImGuiCol_FrameBg,             ImVec4(0.10f, 0.10f, 0.16f, 1.f));
+//     ImGui::ProgressBar(prog, ImVec2(-1, 6), "");
+//     ImGui::PopStyleColor(2);
+
+//     ImGui::Spacing();
+
+//     // ── 第二行：时间 + 按钮 + 音量 ──
+//     char timeBuf[32];
+//     char durBuf[32];
+//     formatTime(timeBuf, sizeof(timeBuf), cur);
+//     formatTime(durBuf,  sizeof(durBuf),  dur);
+//     ImGui::Text("%s / %s", timeBuf, durBuf);
+
+//     ImGui::SameLine(0, 20);
+
+//     // 播放 / 暂停
+//     bool playing = engine.isPlaying();
+//     ImGui::PushStyleColor(ImGuiCol_Button,      ImVec4(0.14f, 0.14f, 0.28f, 1.f));
+//     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.22f, 0.22f, 0.45f, 1.f));
+//     ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.35f, 0.12f, 0.50f, 1.f));
+
+//     if (ImGui::Button(playing ? " || " : " > ", ImVec2(40, 26))) {
+//         if (playing) engine.pause();
+//         else         engine.resume();
+//     }
+//     ImGui::SameLine(0, 4);
+
+//     // 上一曲
+//     if (ImGui::Button(" |< ", ImVec2(40, 26))) {
+//         int idx = playlist.prev();
+//         if (idx >= 0) app.playTrack(idx);
+//     }
+//     ImGui::SameLine(0, 4);
+
+//     // 下一曲
+//     if (ImGui::Button(" >| ", ImVec2(40, 26))) {
+//         int idx = playlist.next();
+//         if (idx >= 0) app.playTrack(idx);
+//     }
+//     ImGui::SameLine(0, 4);
+
+//     // 停止
+//     if (ImGui::Button("Stop", ImVec2(48, 26)))
+//         engine.stop();
+
+//     ImGui::SameLine(0, 20);
+
+//     // 音量
+//     ImGui::PushItemWidth(120);
+//     ImGui::Text("Vol");
+//     ImGui::SameLine();
+//     if (ImGui::SliderFloat("##Vol", &volumeSlider_, 0.f, 1.f, "%.2f"))
+//         engine.setVolume(volumeSlider_);
+//     ImGui::PopItemWidth();
+
+//     ImGui::PopStyleColor(3); // button colors
+
+//     ImGui::End();
+//     ImGui::PopStyleVar();   // WindowPadding
+//     ImGui::PopStyleColor(); // WindowBg
+// }
+
 void UI::drawControls(App& app, float winW, float winH)
 {
-    ImGuiWindowFlags flags =
-        ImGuiWindowFlags_NoMove       |
-        ImGuiWindowFlags_NoResize     |
-        ImGuiWindowFlags_NoCollapse   |
-        ImGuiWindowFlags_NoTitleBar;
-
-    float x = leftPanelWidth_;
-    float y = winH - controlsHeight_;
-    float w = winW - leftPanelWidth_;
-
-    ImGui::SetNextWindowPos(ImVec2(x, y), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(w, controlsHeight_), ImGuiCond_Always);
-
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.05f, 0.05f, 0.08f, 0.95f));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.f, 10.f));
-
-    ImGui::Begin("##Controls", nullptr, flags);
-
     auto& engine   = app.audio();
     auto& playlist = app.playlist();
 
-    // ── 第一行：进度条 ──
-    float cur  = engine.getCursorSeconds();
-    float dur  = engine.getDurationSeconds();
-    float prog = (dur > 0.01f) ? (cur / dur) : 0.f;
+    float panelX = leftPanelWidth_;
+    float panelW = winW - panelX;
+    float panelH = App::kControlsH;
 
-    ImGui::PushStyleColor(ImGuiCol_PlotHistogram,       ImVec4(0.0f, 0.85f, 0.85f, 1.f));
-    ImGui::PushStyleColor(ImGuiCol_FrameBg,             ImVec4(0.10f, 0.10f, 0.16f, 1.f));
-    ImGui::ProgressBar(prog, ImVec2(-1, 6), "");
-    ImGui::PopStyleColor(2);
+    float panelY = winH - panelH;
 
-    ImGui::Spacing();
+    ImGui::SetNextWindowPos(ImVec2(panelX, panelY));
+    ImGui::SetNextWindowSize(ImVec2(panelW, panelH));
 
-    // ── 第二行：时间 + 按钮 + 音量 ──
-    char timeBuf[32];
+    ImGuiWindowFlags flags =
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoResize   |
+        ImGuiWindowFlags_NoMove     |
+        ImGuiWindowFlags_NoScrollbar|
+        ImGuiWindowFlags_NoBackground;
+
+    ImGui::Begin("##controls", nullptr, flags);
+
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+
+    ImVec2 pos  = ImGui::GetWindowPos();
+    ImVec2 size = ImGui::GetWindowSize();
+
+    //-----------------------------------------
+    // 背景
+    //-----------------------------------------
+
+    draw->AddRectFilled(
+        pos,
+        ImVec2(pos.x + size.x, pos.y + size.y),
+        IM_COL32(5, 5, 10, 220)
+    );
+
+    //-----------------------------------------
+    // 时间
+    //-----------------------------------------
+
+    float cur = engine.getCursorSeconds();
+    float dur = engine.getDurationSeconds();
+
+    float progress = dur > 0.01f ? cur / dur : 0.f;
+
+    char curBuf[32];
     char durBuf[32];
-    formatTime(timeBuf, sizeof(timeBuf), cur);
-    formatTime(durBuf,  sizeof(durBuf),  dur);
-    ImGui::Text("%s / %s", timeBuf, durBuf);
 
-    ImGui::SameLine(0, 20);
+    formatTime(curBuf, sizeof(curBuf), cur);
+    formatTime(durBuf, sizeof(durBuf), dur);
 
-    // 播放 / 暂停
-    bool playing = engine.isPlaying();
-    ImGui::PushStyleColor(ImGuiCol_Button,      ImVec4(0.14f, 0.14f, 0.28f, 1.f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.22f, 0.22f, 0.45f, 1.f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.35f, 0.12f, 0.50f, 1.f));
+    //-----------------------------------------
+    // 中心区域
+    //-----------------------------------------
 
-    if (ImGui::Button(playing ? " || " : " > ", ImVec2(40, 26))) {
-        if (playing) engine.pause();
-        else         engine.resume();
-    }
-    ImGui::SameLine(0, 4);
+    float centerX = pos.x + size.x * 0.5f;
 
-    // 上一曲
-    if (ImGui::Button(" |< ", ImVec2(40, 26))) {
+    //-----------------------------------------
+    // 进度条
+    //-----------------------------------------
+
+    float barW = 500.f;
+    float barY = pos.y + 42.f;
+
+    ImVec2 barStart(centerX - barW * 0.5f, barY);
+    ImVec2 barEnd(centerX + barW * 0.5f, barY);
+
+    // 背景线
+    draw->AddLine(
+        barStart,
+        barEnd,
+        IM_COL32(80, 80, 90, 255),
+        3.f
+    );
+
+    // 已播放
+    draw->AddLine(
+        barStart,
+        ImVec2(barStart.x + barW * progress, barY),
+        IM_COL32(210, 80, 255, 255),
+        4.f
+    );
+
+    // 圆点
+    draw->AddCircleFilled(
+        ImVec2(barStart.x + barW * progress, barY),
+        6.f,
+        IM_COL32(220, 100, 255, 255)
+    );
+
+    //-----------------------------------------
+    // 时间文字
+    //-----------------------------------------
+
+    draw->AddText(
+        ImVec2(barStart.x - 55.f, barY - 8.f),
+        IM_COL32_WHITE,
+        curBuf
+    );
+
+    draw->AddText(
+        ImVec2(barEnd.x + 15.f, barY - 8.f),
+        IM_COL32_WHITE,
+        durBuf
+    );
+
+    //-----------------------------------------
+    // 按钮区域
+    //-----------------------------------------
+
+    float btnY = pos.y + 95.f;
+
+    auto iconButton =
+        [&](const char* id,
+            const char* icon,
+            ImVec2 p,
+            float radius,
+            bool filled = false)
+    {
+        ImGui::SetCursorScreenPos(
+            ImVec2(p.x - radius, p.y - radius));
+
+        ImGui::InvisibleButton(id,
+            ImVec2(radius * 2, radius * 2));
+
+        bool hovered = ImGui::IsItemHovered();
+
+        if (filled)
+        {
+            draw->AddCircleFilled(
+                p,
+                radius,
+                hovered
+                    ? IM_COL32(220,100,255,255)
+                    : IM_COL32(180,70,255,255)
+            );
+
+            draw->AddCircle(
+                p,
+                radius + 3,
+                IM_COL32(220,100,255,120),
+                0,
+                2.f
+            );
+        }
+
+        draw->AddText(
+            ImVec2(
+                p.x - 8.f,
+                p.y - 10.f),
+            IM_COL32_WHITE,
+            icon);
+
+        return ImGui::IsItemClicked();
+    };
+
+    //-----------------------------------------
+    // 按钮坐标
+    //-----------------------------------------
+
+    float spacing = 70.f;
+
+    ImVec2 shufflePos(centerX - spacing * 2.0f, btnY);
+    ImVec2 prevPos   (centerX - spacing,       btnY);
+    ImVec2 playPos   (centerX,                 btnY);
+    ImVec2 nextPos   (centerX + spacing,       btnY);
+    ImVec2 repeatPos (centerX + spacing * 2.f, btnY);
+
+    //-----------------------------------------
+    // Shuffle
+    //-----------------------------------------
+
+    iconButton(
+        "shuffle",
+        ICON_FA_SHUFFLE,
+        shufflePos,
+        16.f);
+
+    //-----------------------------------------
+    // Prev
+    //-----------------------------------------
+
+    if (iconButton(
+        "prev",
+        ICON_FA_BACKWARD,
+        prevPos,
+        18.f))
+    {
         int idx = playlist.prev();
-        if (idx >= 0) app.playTrack(idx);
+        if (idx >= 0)
+            app.playTrack(idx);
     }
-    ImGui::SameLine(0, 4);
 
-    // 下一曲
-    if (ImGui::Button(" >| ", ImVec2(40, 26))) {
+    //-----------------------------------------
+    // Play
+    //-----------------------------------------
+
+    bool playing = engine.isPlaying();
+
+    if (iconButton(
+        "play",
+        playing
+            ? ICON_FA_PAUSE
+            : ICON_FA_PLAY,
+        playPos,
+        32.f,
+        true))
+    {
+        if (playing)
+            engine.pause();
+        else
+            engine.resume();
+    }
+
+    //-----------------------------------------
+    // Next
+    //-----------------------------------------
+
+    if (iconButton(
+        "next",
+        ICON_FA_FORWARD,
+        nextPos,
+        18.f))
+    {
         int idx = playlist.next();
-        if (idx >= 0) app.playTrack(idx);
+        if (idx >= 0)
+            app.playTrack(idx);
     }
-    ImGui::SameLine(0, 4);
 
-    // 停止
-    if (ImGui::Button("Stop", ImVec2(48, 26)))
-        engine.stop();
+    //-----------------------------------------
+    // Repeat
+    //-----------------------------------------
 
-    ImGui::SameLine(0, 20);
+    iconButton(
+        "repeat",
+        ICON_FA_REPEAT,
+        repeatPos,
+        16.f);
 
+    //-----------------------------------------
     // 音量
-    ImGui::PushItemWidth(120);
-    ImGui::Text("Vol");
-    ImGui::SameLine();
-    if (ImGui::SliderFloat("##Vol", &volumeSlider_, 0.f, 1.f, "%.2f"))
-        engine.setVolume(volumeSlider_);
-    ImGui::PopItemWidth();
+    //-----------------------------------------
 
-    ImGui::PopStyleColor(3); // button colors
+    float volX = pos.x + size.x - 220.f;
+
+    draw->AddText(
+        ImVec2(volX, btnY - 10.f),
+        IM_COL32_WHITE,
+        ICON_FA_VOLUME_HIGH);
+
+    ImGui::SetCursorScreenPos(
+        ImVec2(volX + 30.f, btnY - 8.f));
+
+    ImGui::PushItemWidth(120);
+
+    ImGui::PushStyleColor(
+        ImGuiCol_SliderGrab,
+        ImVec4(0.85f, 0.3f, 1.f, 1.f));
+
+    ImGui::PushStyleColor(
+        ImGuiCol_FrameBg,
+        ImVec4(0.2f, 0.2f, 0.25f, 1.f));
+
+    ImGui::PushStyleColor(
+        ImGuiCol_FrameBgHovered,
+        ImVec4(0.3f, 0.3f, 0.35f, 1.f));
+
+    if (ImGui::SliderFloat(
+        "##volume",
+        &volumeSlider_,
+        0.f,
+        1.f,
+        ""))
+    {
+        engine.setVolume(volumeSlider_);
+    }
+
+    ImGui::PopStyleColor(3);
+
+    //-----------------------------------------
+    // 文件名
+    //-----------------------------------------
+
+    // std::string title = playlist.currentName();
+
+    // ImVec2 textSize =
+    //     ImGui::CalcTextSize(title.c_str());
+
+    // draw->AddText(
+    //     ImVec2(centerX - textSize.x * 0.5f,
+    //            pos.y + 5.f),
+    //     IM_COL32_WHITE,
+    //     title.c_str());
 
     ImGui::End();
-    ImGui::PopStyleVar();   // WindowPadding
-    ImGui::PopStyleColor(); // WindowBg
 }
 
 // ==========================================================
@@ -338,9 +686,9 @@ void UI::drawControls(App& app, float winW, float winH)
 void UI::drawSettings(App& app)
 {
     ImGui::SetNextWindowSize(ImVec2(300, 240), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowPos(ImVec2(leftPanelWidth_ + 40.f, 40.f), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImVec2(App::kLeftPanelW + 40.f, 40.f), ImGuiCond_FirstUseEver);
 
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.06f, 0.06f, 0.10f, 0.97f));
+    // ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.06f, 0.06f, 0.10f, 0.97f));
 
     if (ImGui::Begin("Settings", &showSettings_)) {
         ImGui::Text("Visualizer");
@@ -355,5 +703,5 @@ void UI::drawSettings(App& app)
     }
     ImGui::End();
 
-    ImGui::PopStyleColor();
+    // ImGui::PopStyleColor();
 }
