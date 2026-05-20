@@ -1,0 +1,30 @@
+# Build output
+build/
+third_party/
+*.exe
+*.exe~
+*.dll
+*.lib
+*.a
+*.so
+*.dylib
+*.obj
+*.o
+
+# IDE / Editor
+.vscode/
+.cache/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+Makefile
+cmake-build-*/
