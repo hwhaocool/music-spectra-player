@@ -41,8 +41,6 @@ private:
 
     void createMipChain(int w, int h, int levels);
     void destroyMipChain();
-    void createCompositeTarget(int w, int h);
-    void destroyCompositeTarget();
     void createQuad();
     void createCompositeOutput(int w, int h);
 };
