@@ -32,6 +32,8 @@ private:
     Shader downShader_, upShader_, compositeShader_;
     GLuint sceneFBO_ = 0, sceneTex_ = 0;
     int sceneW_ = 0, sceneH_ = 0;
+
+    // bloom 阈值，越大越"干净"，越小 bloom 越强
     float bloomThreshold_ = 1.0f;
     std::vector<Mip> mipChain_;
     GLuint quadVAO_ = 0;

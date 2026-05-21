@@ -1,4 +1,5 @@
 #include "particles.h"
+#include "shaders_embed.h"
 #include "audio_engine.h"
 #include <cmath>
 #include <cstdlib>
@@ -12,7 +13,7 @@ bool ParticleSystem::init(int maxP)
     particles_.resize(maxP);
     vertices_.resize(maxP);
 
-    if (!shader_.loadFromFile("shaders/particle.vert", "shaders/particle.frag"))
+    if (!shader_.loadFromMemory(kParticleVert, kParticleFrag))
         return false;
 
     glGenVertexArrays(1, &vao_);

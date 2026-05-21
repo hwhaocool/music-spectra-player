@@ -32,7 +32,9 @@ public:
     float smoothing_   = 0.15f;
 
 private:
+    // 柱子的数量
     int numBars_ = 128;
+
     float barWidthRad_ = 0.f;
 
     Shader shader_;

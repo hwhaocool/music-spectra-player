@@ -16,6 +16,9 @@ public:
         if (v.empty() || f.empty()) return false;
         return compile(v.c_str(), f.c_str());
     }
+    bool loadFromMemory(const char* vs, const char* fs) {
+        return compile(vs, fs);
+    }
 
     void use()  const { glUseProgram(ID); }
     void setFloat(const char* n, float v) const

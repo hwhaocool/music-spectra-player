@@ -1,20 +1,22 @@
 #include "vis.h"
 #include "audio_engine.h"
 #include "math_utils.h"
+#include "shaders_embed.h"
 #include <cmath>
 #include <cstring>
 
 bool Visualizer::init(int fftSize, int numBars)
 {
     numBars_ = numBars;
-    barWidthRad_ = (2.f * PI_F) / numBars_ * 0.72f; // 柱宽 = 72% 间距
+
+    // 柱宽 = 72% 间距
+    barWidthRad_ = (2.f * PI_F) / numBars_ * 0.72f; 
     instances_.resize(numBars_);
     smoothed_.resize(numBars_, 0.f);
     fft_ = new FFTProcessor(fftSize, numBars);
 
     // ── 编译着色器 ──
-    if (!shader_.loadFromFile("shaders/visualizer.vert",
-                              "shaders/visualizer.frag")) {
+    if (!shader_.loadFromMemory(kVisualizerVert, kVisualizerFrag)) {
         return false;
     }
 

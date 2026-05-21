@@ -41,7 +41,7 @@ bool App::init(int w, int h)
 
     // ── 子系统 ──
     if (!audio_.init()) return false;
-    if (!vis_.init(1024, 128)) return false;
+    if (!vis_.init(1024)) return false;
     // if (!bloom_.init(w, h, 5)) return false;
     if (!particles_.init(2000)) return false;
     if (!ui_.init(window_)) return false;

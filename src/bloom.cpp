@@ -1,4 +1,5 @@
 #include "bloom.h"
+#include "shaders_embed.h"
 #include <iostream>
 
 // ═══════════════════════════════════════════════════════════
@@ -13,11 +14,11 @@ bool Bloom::init(int w, int h, int mipLevels)
     sceneW_ = w; sceneH_ = h;
 
     // ── 加载着色器 ──
-    if (!downShader_.loadFromFile("shaders/fullscreen.vert", "shaders/bloom_down.frag"))
+    if (!downShader_.loadFromMemory(kFullscreenVert, kBloomDownFrag))
         return false;
-    if (!upShader_.loadFromFile("shaders/fullscreen.vert", "shaders/bloom_up.frag"))
+    if (!upShader_.loadFromMemory(kFullscreenVert, kBloomUpFrag))
         return false;
-    if (!compositeShader_.loadFromFile("shaders/fullscreen.vert", "shaders/composite.frag"))
+    if (!compositeShader_.loadFromMemory(kFullscreenVert, kCompositeFrag))
         return false;
 
     // ── 场景 FBO（全分辨率）──
