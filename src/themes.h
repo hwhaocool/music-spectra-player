@@ -2,8 +2,9 @@
 // 频谱主题注册表
 // 添加新主题：1) 建 theme_xxx.h  2) 在此 include + 注册
 
-#include "theme_bars.h"
-#include "theme_aura.h"
+#include "visual/theme_bars.h"
+#include "visual/theme_aura.h"
+#include "visual/theme_gpt.h"
 
 struct Theme {
     const char* name;
@@ -16,6 +17,7 @@ struct Theme {
 static constexpr Theme kThemes[] = {
     REGISTER_THEME(theme_bars),
     REGISTER_THEME(theme_aura),
+    REGISTER_THEME(theme_gpt),
 };
 
 static constexpr int kThemeCount = sizeof(kThemes) / sizeof(kThemes[0]);
