@@ -57,6 +57,7 @@ bool App::init(int w, int h)
 
     // 添加示例播放列表
     playlist_.addFile("example.mp3");
+    playlist_.addFile("X:\\01.wav");
 
     // 默认背景
     glClearColor(kClearColor[0], kClearColor[1], kClearColor[2], kClearColor[3]);

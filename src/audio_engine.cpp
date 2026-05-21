@@ -61,9 +61,16 @@ void AudioEngine::stopLocked()
         delete sound_;
         sound_ = nullptr;
     }
+    if (decoder_) {                     // ← 新增
+        ma_decoder_uninit(decoder_);
+        delete decoder_;
+        decoder_ = nullptr;
+    }
+    fileData_.clear();                  // ← 新增：释放文件内存
     loaded_.store(false);
     playing_.store(false);
 }
+
 
 // ── 公开版本：加锁后委托 ──
 void AudioEngine::stop()
@@ -96,19 +103,45 @@ bool AudioEngine::loadAndPlay(const std::string& path)
     std::lock_guard<std::mutex> lk(mtx_);
 
     // 关键修复：调用 stopLocked() 而非 stop()，避免死锁
+    // ① 清理上一首
     stopLocked();
 
-    sound_ = new ma_sound;
-    if (ma_sound_init_from_file(engine_, path.c_str(), 0, nullptr, nullptr, sound_) != MA_SUCCESS) {
-        std::cerr << "[Audio] Failed to load: " << path << "\n";
-        delete sound_; sound_ = nullptr;
+    // ② 把整个文件读进内存
+    fileData_ = readFileToMemory(path);
+    if (fileData_.empty()) {
+        std::cerr << "[Audio] Failed to read file: " << path << "\n";
         return false;
     }
+
+    // ③ 从内存初始化解码器
+    decoder_ = new ma_decoder;
+    ma_decoder_config dcfg = ma_decoder_config_init(ma_format_f32, 2, 48000);
+    if (ma_decoder_init_memory(fileData_.data(), fileData_.size(),
+                                &dcfg, decoder_) != MA_SUCCESS) {
+        std::cerr << "[Audio] Failed to decode: " << path << "\n";
+        delete decoder_; decoder_ = nullptr;
+        fileData_.clear();
+        return false;
+    }
+
+    // ④ 从解码器（data source）创建声音
+    sound_ = new ma_sound;
+    if (ma_sound_init_from_data_source(engine_, decoder_,
+                                        0, nullptr, sound_) != MA_SUCCESS) {
+        std::cerr << "[Audio] Failed to create sound\n";
+        ma_decoder_uninit(decoder_);
+        delete decoder_; decoder_ = nullptr;
+        delete sound_;   sound_   = nullptr;
+        fileData_.clear();
+        return false;
+    }
+
     ma_sound_set_volume(sound_, volume_.load());
     ma_sound_start(sound_);
     loaded_.store(true);
     playing_.store(true);
     pcmRing_.clear();
+
     std::cout << "[Audio] Playing: " << path << "\n";
     return true;
 }
@@ -171,4 +204,34 @@ void AudioEngine::onPCMAudioFrames(const float* input, uint32_t frameCount)
     for (uint32_t i = 0; i < frameCount; ++i)
         mono[i] = (input[i * 2] + input[i * 2 + 1]) * 0.5f;
     pcmRing_.write(mono.data(), frameCount);
+}
+
+std::vector<uint8_t> AudioEngine::readFileToMemory(const std::string& path)
+{
+    std::vector<uint8_t> buf;
+
+#ifdef _WIN32
+    // UTF-8 → UTF-16
+    int wlen = MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, nullptr, 0);
+    if (wlen <= 0) return buf;
+    std::vector<wchar_t> wp(wlen);
+    MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, wp.data(), wlen);
+
+    FILE* fp = _wfopen(wp.data(), L"rb");
+#else
+    FILE* fp = fopen(path.c_str(), "rb");
+#endif
+
+    if (!fp) return buf;
+
+    fseek(fp, 0, SEEK_END);
+    auto sz = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    if (sz > 0) {
+        buf.resize(static_cast<size_t>(sz));
+        fread(buf.data(), 1, buf.size(), fp);
+    }
+    fclose(fp);
+    return buf;
 }

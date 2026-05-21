@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <mutex>
 #include <thread>
+#include "miniaudio.h"
 
 // Forward declare to avoid exposing miniaudio.h everywhere
 struct ma_engine;
@@ -39,6 +40,7 @@ public:
     // 频谱数据
     RingBuffer&       pcmRing()       { return pcmRing_; }
     const RingBuffer& pcmRing() const { return pcmRing_; }
+    
 
 private:
     // 不加锁的内部版本（调用方必须已持有 mtx_）
@@ -59,4 +61,10 @@ private:
     std::atomic<float>   volume_{0.8f};
 
     mutable std::mutex   mtx_;
+
+    std::vector<uint8_t>  fileData_;          // 文件原始字节（保持存活）
+    ma_decoder*           decoder_ = nullptr;  // 内存解码器
+
+    // 读取文件到内存（内部处理 UTF-8 中文路径）
+    static std::vector<uint8_t> readFileToMemory(const std::string& path);
 };
