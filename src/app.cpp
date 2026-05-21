@@ -120,28 +120,32 @@ void App::run()
 
         // ============================================================
         //  1. 渲染频谱到 sceneFBO（尺寸 = vpW × vpH）
+        //     暂停时跳过清屏+重绘，保留上一帧画面
         // ============================================================
-        glBindFramebuffer(GL_FRAMEBUFFER, bloom_.sceneFBO());
+        bool paused = !audio_.isPlaying() && audio_.isLoaded();
 
-        // sceneFBO 就是 viewport 大小，全画面绘制
-        glViewport(0, 0, vpW, vpH);
-        glClearColor(kClearColor[0], kClearColor[1], kClearColor[2], kClearColor[3]);
-        glClear(GL_COLOR_BUFFER_BIT);
+        if (!paused) {
+            glBindFramebuffer(GL_FRAMEBUFFER, bloom_.sceneFBO());
 
-        float halfW = specScreenW * 0.5f;
-        float halfH = specScreenH * 0.5f;
-        Mat4 proj   = Mat4::ortho(-halfW, halfW, -halfH, halfH);
+            glViewport(0, 0, vpW, vpH);
+            glClearColor(kClearColor[0], kClearColor[1], kClearColor[2], kClearColor[3]);
+            glClear(GL_COLOR_BUFFER_BIT);
 
-        vis_.update(dt, audio_);
+            float halfW = specScreenW * 0.5f;
+            float halfH = specScreenH * 0.5f;
+            Mat4 proj   = Mat4::ortho(-halfW, halfW, -halfH, halfH);
 
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-        vis_.draw(proj.ptr(), 0.f, 0.f, autoRadius, autoBarMax, time_);
-        particles_.update(dt, 0.f, 0.f, autoRadius, audio_);
-        particles_.draw(proj.ptr());
-        glDisable(GL_BLEND);
+            vis_.update(dt, audio_);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            vis_.draw(proj.ptr(), 0.f, 0.f, autoRadius, autoBarMax, time_);
+            particles_.update(dt, 0.f, 0.f, autoRadius, audio_);
+            particles_.draw(proj.ptr());
+            glDisable(GL_BLEND);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
 
         // ============================================================
         //  2. Bloom 后处理（FBO = viewport 尺寸）
