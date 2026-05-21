@@ -1,10 +1,11 @@
-//粒子片段
+
 
 #version 430 core
 
 in vec4 vColor;
 out vec4 FragColor;
 
+//粒子片段
 void main()
 {
     float d     = length(gl_PointCoord - 0.5);

@@ -20,10 +20,14 @@ vec3 hsv2rgb(vec3 c)
 void main()
 {
     // 霓虹渐变：cyan(0.50) → magenta(0.90)
-    float hue = 0.50 + vNormAngle * 0.40;
-    vec3 neon  = hsv2rgb(vec3(hue, 0.85, 1.0));
+    // 粉 0.95
+    float hue = 0.70 + vNormAngle * 0.35;
 
-    // 亮度随 magnitude 提升
+    // 饱和度 0.85
+    // 亮度 1.0
+    vec3 neon  = hsv2rgb(vec3(hue, 0.95, 2.0));
+
+    // 亮度随 音量 提升
     neon *= 0.55 + vMagnitude * 0.45;
 
     // 微弱脉动
