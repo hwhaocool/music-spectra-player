@@ -139,6 +139,8 @@ GLuint Bloom::apply(GLuint srcTex, float strength)
         glViewport(0, 0, mipChain_[i].w, mipChain_[i].h);
         glClear(GL_COLOR_BUFFER_BIT);
         downShader_.setVec2("uTexelSize", 1.f / pw, 1.f / ph);
+        // 仅第一趟应用亮度阈值，后续趟次处理的已经是提取后的亮部
+        downShader_.setFloat("uThreshold", i == 0 ? bloomThreshold_ : 0.f);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, prevTex);
         downShader_.setInt("uTexture", 0);

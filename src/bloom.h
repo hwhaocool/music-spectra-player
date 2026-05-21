@@ -32,6 +32,7 @@ private:
     Shader downShader_, upShader_, compositeShader_;
     GLuint sceneFBO_ = 0, sceneTex_ = 0;
     int sceneW_ = 0, sceneH_ = 0;
+    float bloomThreshold_ = 1.0f;
     std::vector<Mip> mipChain_;
     GLuint quadVAO_ = 0;
 
