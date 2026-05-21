@@ -38,6 +38,9 @@ public:
     // 播放控制台 高度
     static constexpr float kControlsH   = 150.f;
 
+    // 自定义标题栏 高度
+    static constexpr float kTitleBarH   = 48.f;
+
 private:
     void processDrop();
 

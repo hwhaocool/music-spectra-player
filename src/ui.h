@@ -2,6 +2,8 @@
 
 class App;
 
+struct GLFWwindow;
+
 class UI {
 public:
     UI() = default;
@@ -12,10 +14,12 @@ public:
     void endFrame();
 
 private:
+    void drawTitleBar(App& app, float winW, float winH);
     void drawLeftPanel(App& app, float winW, float winH);
     void drawControls(App& app, float winW, float winH);
     void drawSettings(App& app);
 
+    GLFWwindow* window_      = nullptr;
     float volumeSlider_    = 0.8f;
     bool  showSettings_    = false;
 

@@ -1,5 +1,6 @@
 #include "ui.h"
 #include "app.h"
+#include "themes.h"
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -67,6 +68,8 @@ void setupFonts()
 
 bool UI::init(void* glfwWin)
 {
+    window_ = static_cast<GLFWwindow*>(glfwWin);
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -75,7 +78,6 @@ bool UI::init(void* glfwWin)
 
     setupFonts();
     
-
     // ── 全局样式 ──
     ImGui::StyleColorsDark();
     ImGuiStyle& s = ImGui::GetStyle();
@@ -152,12 +154,144 @@ void UI::draw(App& app, int windowWidth, int windowHeight)
     float winW = (float)windowWidth;
     float winH = (float)windowHeight;
 
+    drawTitleBar(app, winW, winH);
     drawLeftPanel(app, winW, winH);
     drawControls(app, winW, winH);
 
     if (showSettings_) {
         drawSettings(app);
     }
+}
+
+// ==========================================================
+//  自定义标题栏
+// ==========================================================
+
+void UI::drawTitleBar(App& app, float winW, float winH)
+{
+    const float barH = App::kTitleBarH;
+    const float btnW = 46.f;
+
+    // 标题栏窗口（提供 ImGui 交互上下文）
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImVec2(winW, barH));
+    ImGuiWindowFlags flags =
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoBringToFrontOnFocus |
+        ImGuiWindowFlags_NoSavedSettings;
+
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.04f, 0.04f, 0.08f, 1.f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::Begin("##titlebar", nullptr, flags);
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor();
+
+    ImDrawList* draw = ImGui::GetWindowDrawList();
+    ImVec2 wPos = ImGui::GetWindowPos();
+    ImVec2 wSize = ImGui::GetWindowSize();
+
+    // 底部分割线
+    draw->AddLine(ImVec2(wPos.x, wPos.y + wSize.y),
+                  ImVec2(wPos.x + wSize.x, wPos.y + wSize.y),
+                  IM_COL32(30, 30, 50, 255), 1.f);
+
+    // 标题
+    draw->AddText(ImVec2(wPos.x + 16.f, wPos.y + 14.f),
+                  IM_COL32(180, 180, 200, 255), "Yellow Music Player");
+
+    // ── 右侧按钮 ──
+    float rightX = wPos.x + wSize.x;
+
+    // --- Close ---
+    float cx = rightX - btnW;
+    ImGui::SetCursorScreenPos(ImVec2(cx, wPos.y));
+    ImGui::InvisibleButton("##close", ImVec2(btnW, barH));
+    if (ImGui::IsItemHovered())
+        draw->AddRectFilled(ImVec2(cx, wPos.y), ImVec2(cx + btnW, wPos.y + barH),
+                            IM_COL32(200, 40, 40, 200));
+    draw->AddText(ImVec2(cx + 15.f, wPos.y + 14.f),
+                  ImGui::IsItemHovered() ? IM_COL32_WHITE : IM_COL32(140, 140, 160, 255),
+                  ICON_FA_XMARK);
+    if (ImGui::IsItemClicked())
+        glfwSetWindowShouldClose(window_, GLFW_TRUE);
+
+    // --- Maximize ---
+    float mx = cx - btnW;
+    ImGui::SetCursorScreenPos(ImVec2(mx, wPos.y));
+    ImGui::InvisibleButton("##maximize", ImVec2(btnW, barH));
+    if (ImGui::IsItemHovered())
+        draw->AddRectFilled(ImVec2(mx, wPos.y), ImVec2(mx + btnW, wPos.y + barH),
+                            IM_COL32(40, 40, 80, 200));
+    bool maximized = glfwGetWindowAttrib(window_, GLFW_MAXIMIZED);
+    draw->AddText(ImVec2(mx + 15.f, wPos.y + 14.f),
+                  ImGui::IsItemHovered() ? IM_COL32_WHITE : IM_COL32(140, 140, 160, 255),
+                  maximized ? ICON_FA_WINDOW_RESTORE : ICON_FA_WINDOW_MAXIMIZE);
+    if (ImGui::IsItemClicked()) {
+        if (maximized)
+            glfwRestoreWindow(window_);
+        else
+            glfwMaximizeWindow(window_);
+    }
+
+    // --- Minimize ---
+    float minx = mx - btnW;
+    ImGui::SetCursorScreenPos(ImVec2(minx, wPos.y));
+    ImGui::InvisibleButton("##minimize", ImVec2(btnW, barH));
+    if (ImGui::IsItemHovered())
+        draw->AddRectFilled(ImVec2(minx, wPos.y), ImVec2(minx + btnW, wPos.y + barH),
+                            IM_COL32(40, 40, 80, 200));
+    draw->AddText(ImVec2(minx + 15.f, wPos.y + 14.f),
+                  ImGui::IsItemHovered() ? IM_COL32_WHITE : IM_COL32(140, 140, 160, 255),
+                  ICON_FA_MINUS);
+    if (ImGui::IsItemClicked())
+        glfwIconifyWindow(window_);
+
+    // --- Theme toggle (在最小化左边) ---
+    float tx = minx - btnW;
+    ImGui::SetCursorScreenPos(ImVec2(tx, wPos.y));
+    ImGui::InvisibleButton("##theme", ImVec2(btnW, barH));
+    if (ImGui::IsItemHovered())
+        draw->AddRectFilled(ImVec2(tx, wPos.y), ImVec2(tx + btnW, wPos.y + barH),
+                            IM_COL32(50, 40, 80, 200));
+    draw->AddText(ImVec2(tx + 13.f, wPos.y + 14.f),
+                  ImGui::IsItemHovered() ? IM_COL32(200, 150, 255, 255) : IM_COL32(160, 120, 200, 255),
+                  ICON_FA_PALETTE);
+    if (ImGui::IsItemClicked()) {
+        int next = (app.vis().currentTheme_ + 1) % kThemeCount;
+        app.vis().setTheme(next);
+    }
+
+    // ── 窗口拖拽（非按钮区域，用原始鼠标坐标避免闪动）──
+    {
+        static bool dragActive = false;
+        static double dragOrgX, dragOrgY;
+        static int dragOrgWX, dragOrgWY;
+
+        ImGui::SetCursorScreenPos(ImVec2(wPos.x, wPos.y));
+        ImGui::InvisibleButton("##drag", ImVec2(tx - wPos.x, barH));
+
+        if (ImGui::IsItemActive() && !dragActive) {
+            dragActive = true;
+            glfwGetCursorPos(window_, &dragOrgX, &dragOrgY);
+            glfwGetWindowPos(window_, &dragOrgWX, &dragOrgWY);
+        }
+        if (dragActive) {
+            double mx, my;
+            glfwGetCursorPos(window_, &mx, &my);
+            glfwSetWindowPos(window_,
+                dragOrgWX + (int)(mx - dragOrgX),
+                dragOrgWY + (int)(my - dragOrgY));
+            if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
+                dragActive = false;
+        }
+    }
+
+    ImGui::End();
 }
 
 // ==========================================================
@@ -174,9 +308,9 @@ void UI::drawLeftPanel(App& app, float winW, float winH)
         ImGuiWindowFlags_NoScrollbar  |
         ImGuiWindowFlags_NoScrollWithMouse;
 
-    // 固定到左侧，完全不透明
-    ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(App::kLeftPanelW, winH), ImGuiCond_Always);
+    // 固定到左侧（标题栏下方）
+    ImGui::SetNextWindowPos(ImVec2(0.f, App::kTitleBarH), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(App::kLeftPanelW, winH - App::kTitleBarH), ImGuiCond_Always);
 
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.05f, 0.05f, 0.08f, 1.f));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.f, 16.f));

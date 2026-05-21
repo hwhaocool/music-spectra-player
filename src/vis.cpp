@@ -1,7 +1,7 @@
 #include "vis.h"
 #include "audio_engine.h"
 #include "math_utils.h"
-#include "shaders_embed.h"
+#include "themes.h"
 #include <cmath>
 #include <cstring>
 
@@ -15,10 +15,8 @@ bool Visualizer::init(int fftSize, int numBars)
     smoothed_.resize(numBars_, 0.f);
     fft_ = new FFTProcessor(fftSize, numBars);
 
-    // ── 编译着色器 ──
-    if (!shader_.loadFromMemory(kVisualizerVert, kVisualizerFrag)) {
-        return false;
-    }
+    // ── 编译着色器（默认主题） ──
+    if (!setTheme(0)) return false;
 
     // ── 单元四边形（2 个三角形）──
     float quad[] = {
@@ -54,6 +52,13 @@ bool Visualizer::init(int fftSize, int numBars)
 
     glBindVertexArray(0);
     return true;
+}
+
+bool Visualizer::setTheme(int index)
+{
+    if (index < 0 || index >= kThemeCount) return false;
+    currentTheme_ = index;
+    return shader_.loadFromMemory(kThemes[index].vert, kThemes[index].frag);
 }
 
 void Visualizer::update(float dt, AudioEngine& audio)

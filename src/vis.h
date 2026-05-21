@@ -30,6 +30,9 @@ public:
     float radius_      = 140.f;
     float barMaxHeight_= 100.f;
     float smoothing_   = 0.15f;
+    int   currentTheme_ = 0;
+
+    bool setTheme(int index);
 
 private:
     // 柱子的数量

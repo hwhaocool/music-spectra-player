@@ -20,6 +20,7 @@ bool App::init(int w, int h)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE); // 自绘标题栏
 
     window_ = glfwCreateWindow(w, h, "Music Visualizer", nullptr, nullptr);
     if (!window_) {
@@ -94,9 +95,9 @@ void App::run()
 
         float dpiScale = (winSizeW > 0) ? ((float)fbW / (float)winSizeW) : 1.f;
 
-        // ── 右侧面板 viewport ──
+        // ── 右侧面板 viewport（减去标题栏 + 控制栏）──
         float specScreenW = (float)winSizeW - kLeftPanelW;
-        float specScreenH = (float)winSizeH - kControlsH;
+        float specScreenH = (float)winSizeH - kControlsH - kTitleBarH;
         if (specScreenW < 1.f) specScreenW = 1.f;
         if (specScreenH < 1.f) specScreenH = 1.f;
 
