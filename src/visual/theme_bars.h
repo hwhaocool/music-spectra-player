@@ -4,6 +4,7 @@
 namespace theme_bars {
 static constexpr const char* kName = "Neon Bars";
 
+// 顶点着色器
 static constexpr const char* kVert = R"glsl(
 #version 430 core
 
@@ -39,6 +40,7 @@ void main()
 }
 )glsl";
 
+// 片段着色器
 static constexpr const char* kFrag = R"glsl(
 #version 430 core
 

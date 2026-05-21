@@ -42,9 +42,15 @@ bool App::init(int w, int h)
 
     // ── 子系统 ──
     if (!audio_.init()) return false;
+
+    // 频谱柱子
     if (!vis_.init(1024)) return false;
     // if (!bloom_.init(w, h, 5)) return false;
+
+    // 粒子系统
     if (!particles_.init(2000)) return false;
+
+    
     if (!ui_.init(window_)) return false;
 
     // ── Bloom 按 viewport 尺寸初始化 ──
