@@ -54,8 +54,10 @@ void ParticleSystem::spawn(float cx, float cy, float radius, float energy)
         float ang = randf() * 2.f * PI_F;
         float r   = radius + randf() * 20.f;
         p.pos     = Vec2(cx + cosf(ang) * r, cy + sinf(ang) * r);
-        p.vel     = Vec2(cosf(ang) * (40.f + randf() * 60.f),
-                         sinf(ang) * (40.f + randf() * 60.f));
+
+        //粒子方向
+        p.vel     = Vec2(-cosf(ang) * (40.f + randf() * 60.f),
+                         -sinf(ang) * (40.f + randf() * 60.f));
         p.life    = 0.8f + randf() * 1.2f;
         p.maxLife = p.life;
         p.size    = 2.f + randf() * 4.f;
