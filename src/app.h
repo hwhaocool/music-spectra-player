@@ -1,9 +1,9 @@
 #pragma once
 #include "audio_engine.h"
-#include "vis.h"
-#include "bloom.h"
-#include "particles.h"
-#include "vortex.h"
+#include "shaders/bloom.h"
+#include "shaders/vis.h"
+#include "shaders/particles.h"
+#include "shaders/vortex.h"
 #include "playlist.h"
 #include "ui.h"
 #include "math_utils.h"
