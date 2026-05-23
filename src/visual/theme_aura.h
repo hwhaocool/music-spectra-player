@@ -1,7 +1,7 @@
 #pragma once
 // 主题：流光圆环（连续渐变光晕）
 
-namespace theme_aura {
+struct theme_aura : ThemeDefaults {
 static constexpr const char* kName = "Aura Ring";
 
 static constexpr const char* kVert = R"glsl(
@@ -78,4 +78,4 @@ void main()
     FragColor = vec4(color, alpha);
 }
 )glsl";
-} // namespace theme_aura
+}; // struct theme_aura

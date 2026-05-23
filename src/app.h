@@ -22,10 +22,11 @@ public:
     void shutdown();
 
     // 子系统访问器（供 UI 调用）
-    AudioEngine&  audio()     { return audio_; }
-    Visualizer&   vis()       { return vis_; }
-    Playlist&     playlist()  { return playlist_; }
-    float&        bloomStrength() { return bloomStr_; }
+    AudioEngine&     audio()     { return audio_; }
+    Visualizer&      vis()       { return vis_; }
+    ParticleSystem&  particles() { return particles_; }
+    Playlist&        playlist()  { return playlist_; }
+    float&           bloomStrength() { return bloomStr_; }
 
     void playTrack(int index);
 

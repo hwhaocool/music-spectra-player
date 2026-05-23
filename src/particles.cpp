@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <algorithm>
+#include "math_utils.h"
 
 static float randf() { return (float)std::rand() / RAND_MAX; }
 
@@ -13,7 +14,7 @@ bool ParticleSystem::init(int maxP)
     particles_.resize(maxP);
     vertices_.resize(maxP);
 
-    if (!shader_.loadFromMemory(kParticleVert, kParticleFrag))
+    if (!shader_.loadFromMemory(kDefaultParticleVert, kDefaultParticleFrag))
         return false;
 
     glGenVertexArrays(1, &vao_);
@@ -38,6 +39,15 @@ bool ParticleSystem::init(int maxP)
 
     glBindVertexArray(0);
     return true;
+}
+
+bool ParticleSystem::setShaders(const char* vert, const char* frag) {
+    shader_.destroy();
+
+    auto p_vert = get_prefix_n(vert, 30);
+    auto p_frag = get_prefix_n(frag, 30);
+    // printf("开始编译粒子着色器, vert=%s, frag=%s", p_vert.c_str(), p_frag.c_str());
+    return shader_.loadFromMemory(vert, frag);
 }
 
 void ParticleSystem::spawn(float cx, float cy, float radius, float energy)

@@ -19,6 +19,7 @@ class ParticleSystem {
 public:
     ParticleSystem() = default;
     bool init(int maxParticles = 2000);
+    bool setShaders(const char* vert, const char* frag);
     void update(float dt, float centerX, float centerY,
                 float ringRadius, AudioEngine& audio);
     void draw(const float* projMatrix);

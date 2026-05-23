@@ -1,7 +1,7 @@
 #pragma once
 // 主题：霓虹柱（当前默认样式）
 
-namespace theme_bars {
+struct theme_bars : ThemeDefaults {
 static constexpr const char* kName = "Neon Bars";
 
 // 顶点着色器
@@ -87,4 +87,4 @@ void main()
     FragColor = vec4(neon, a * vMagnitude);
 }
 )glsl";
-} // namespace theme_bars
+}; // struct theme_bars

@@ -3,6 +3,7 @@
 #pragma once
 #include <cmath>
 #include <algorithm>
+#include <string>
 
 constexpr float PI_F = 3.14159265358979323846f;
 
@@ -44,3 +45,10 @@ struct Mat4 {
     }
     const float* ptr() const { return m; }
 };
+
+
+inline std::string get_prefix_n(const char* src, int n) {
+    int len = 0;
+    while (len < n && src[len] != '\0') ++len;
+    return std::string(src, len);
+}

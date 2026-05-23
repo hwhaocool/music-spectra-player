@@ -263,7 +263,9 @@ void UI::drawTitleBar(App& app, float winW, float winH)
                   ICON_FA_PALETTE);
     if (ImGui::IsItemClicked()) {
         int next = (app.vis().currentTheme_ + 1) % kThemeCount;
+        printf("==== 开始加载主题=%s\n", kThemes[next].name);
         app.vis().setTheme(next);
+        app.particles().setShaders(kThemes[next].particleVert, kThemes[next].particleFrag);
     }
 
     // ── 窗口拖拽（非按钮区域，用原始鼠标坐标避免闪动）──

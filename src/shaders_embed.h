@@ -110,10 +110,10 @@ void main()
 }
 )glsl";
 
-// 粒子顶点
-static constexpr const char* kParticleVert = R"glsl(
-
+// 默认粒子顶点（主题可覆写）
+static constexpr const char* kDefaultParticleVert = R"glsl(
 #version 430 core
+// default
 
 layout(location = 0) in vec2 aPos;
 layout(location = 1) in vec4 aColor;
@@ -132,10 +132,10 @@ void main()
 )glsl";
 
 
-//粒子片段
-static constexpr const char* kParticleFrag = R"glsl(
-
+// 默认粒子片段（主题可覆写）
+static constexpr const char* kDefaultParticleFrag = R"glsl(
 #version 430 core
+// default
 
 in vec4 vColor;
 out vec4 FragColor;
