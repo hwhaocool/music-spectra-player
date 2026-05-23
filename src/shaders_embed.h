@@ -220,3 +220,50 @@ void main()
     FragColor = vec4(vColor.rgb + glow, vColor.a * alpha);
 }
 )glsl";
+
+
+
+// 中心能量旋涡 Shader
+static constexpr const char* kCenterVortexFrag = R"glsl(
+#version 430 core
+
+in vec2 vUV;
+
+out vec4 FragColor;
+
+uniform float uTime;
+uniform vec2  uInnerRadius;   // NDC 空间内圆半径 (x, y)，与条形图内圆对齐
+
+vec3 hsv2rgb(vec3 c)
+{
+    vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+void main()
+{
+    // 居中并做长宽比修正，使圆在屏幕空间保持正圆
+    vec2 uv = (vUV * 2.0 - 1.0) / uInnerRadius;
+    float r = length(uv);
+    float a = atan(uv.y, uv.x);
+
+    // 极坐标扭曲（越靠外越强）
+    a += sin(r * 8.0 - uTime * 3.0) * 0.20 * min(r, 1.0);
+
+    // 涡旋环：内圈淡入，外圈淡出
+    float ring = smoothstep(0.35, 0.40, r)
+               * smoothstep(1.00, 0.88, r);
+
+    float hue = fract(a / 6.28318 + uTime * 0.05);
+    vec3 color = hsv2rgb(vec3(hue, 0.9, 1.5));
+
+    // 超出内圆完全透明
+    float alpha = ring * smoothstep(1.02, 0.92, r);
+
+    color *= alpha * 2.5;
+
+    FragColor = vec4(color, alpha);
+}
+)glsl";
+

@@ -50,7 +50,9 @@ bool App::init(int w, int h)
     // 粒子系统
     if (!particles_.init(2000)) return false;
 
-    
+    // 中心漩涡背景
+    if (!vortex_.init()) return false;
+
     if (!ui_.init(window_)) return false;
 
     // ── Bloom 按 viewport 尺寸初始化 ──
@@ -137,9 +139,13 @@ void App::run()
             glViewport(0, 0, vpW, vpH);
             glClearColor(kClearColor[0], kClearColor[1], kClearColor[2], kClearColor[3]);
             glClear(GL_COLOR_BUFFER_BIT);
-
+            
             float halfW = specScreenW * 0.5f;
             float halfH = specScreenH * 0.5f;
+
+            // 中心漩涡背景（NDC 半径 = 世界半径 / 半屏尺寸）
+            // vortex_.draw(time_, autoRadius / halfW, autoRadius / halfH);
+
             Mat4 proj   = Mat4::ortho(-halfW, halfW, -halfH, halfH);
 
             vis_.update(dt, audio_);
@@ -194,6 +200,7 @@ void App::shutdown()
     vis_.destroy();
     bloom_.destroy();
     particles_.destroy();
+    vortex_.destroy();
     ui_.shutdown();
     if (window_) glfwDestroyWindow(window_);
     glfwTerminate();

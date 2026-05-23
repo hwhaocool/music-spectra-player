@@ -13,9 +13,9 @@ struct ThemeDefaults {
     static constexpr const char* kParticleFrag = kDefaultParticleFrag;
 };
 
-#include "visual/theme_bars.h"
-#include "visual/theme_aura.h"
-#include "visual/theme_gpt.h"
+#include "theme_v/theme_bars.h"
+#include "theme_v/theme_aura.h"
+#include "theme_v/theme_gpt.h"
 
 struct Theme {
     const char* name;
@@ -28,9 +28,9 @@ struct Theme {
 #define REGISTER_THEME(ns) { ns::kName, ns::kVert, ns::kFrag, ns::kParticleVert, ns::kParticleFrag }
 
 static constexpr Theme kThemes[] = {
+    REGISTER_THEME(theme_gpt),
     REGISTER_THEME(theme_bars),
     REGISTER_THEME(theme_aura),
-    REGISTER_THEME(theme_gpt),
 };
 
 static constexpr int kThemeCount = sizeof(kThemes) / sizeof(kThemes[0]);

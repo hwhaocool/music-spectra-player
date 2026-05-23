@@ -320,13 +320,13 @@ void UI::drawLeftPanel(App& app, float winW, float winH)
     ImGui::Begin("##LeftPanel", nullptr, flags);
 
     // ── 标题区 ──
-    ImGui::Text("MUSIC PLAYER");
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.45f, 0.45f, 0.55f, 1.f));
-    ImGui::Text("Circular Visualizer");
-    ImGui::PopStyleColor();
-    ImGui::Spacing();
-    ImGui::Separator();
-    ImGui::Spacing();
+    // ImGui::Text("MUSIC PLAYER");
+    // ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.45f, 0.45f, 0.55f, 1.f));
+    // ImGui::Text("Circular Visualizer");
+    // ImGui::PopStyleColor();
+    // ImGui::Spacing();
+    // ImGui::Separator();
+    // ImGui::Spacing();
 
     // ── 播放列表标题行 ──
     ImGui::Text("播放列表");

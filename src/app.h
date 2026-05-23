@@ -3,6 +3,7 @@
 #include "vis.h"
 #include "bloom.h"
 #include "particles.h"
+#include "vortex.h"
 #include "playlist.h"
 #include "ui.h"
 #include "math_utils.h"
@@ -48,12 +49,13 @@ private:
     int winW_ = 1280, winH_ = 720;
     GLFWwindow* window_ = nullptr;
 
-    AudioEngine  audio_;
-    Visualizer   vis_;
-    Bloom        bloom_;
-    ParticleSystem particles_;
-    Playlist     playlist_;
-    UI           ui_;
+    AudioEngine     audio_;
+    Visualizer      vis_;
+    Bloom           bloom_;
+    ParticleSystem  particles_;
+    VortexOverlay   vortex_;
+    Playlist        playlist_;
+    UI              ui_;
 
     float bloomStr_  = 0.6f;
     float time_      = 0.f;
