@@ -4,6 +4,8 @@
 ## 截图
 
 ![shot-1](snaptshot\shot-1.png)
+
+
 ![shot-2](snaptshot\shot-2.gif)
 
 ## 功能
