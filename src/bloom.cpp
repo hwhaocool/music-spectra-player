@@ -14,7 +14,7 @@ bool Bloom::init(int w, int h, int mipLevels)
     sceneW_ = w; sceneH_ = h;
 
     // ── 加载着色器 ──
-    if (!downShader_.loadFromMemory(kFullscreenVert, kBloomDownFrag))
+    if (!downShader_.loadFromMemory(kFullscreenVert, kBloomDownFrag2))
         return false;
     if (!upShader_.loadFromMemory(kFullscreenVert, kBloomUpFrag))
         return false;

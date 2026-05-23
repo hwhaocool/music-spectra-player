@@ -15,6 +15,40 @@ void main()
 }
 )glsl";
 
+// gpt bloom 降采样【顶部可以发光】
+static constexpr const char* kBloomDownFrag2 = R"glsl(
+#version 430 core
+
+in vec2 vUV;
+out vec4 FragColor;
+uniform sampler2D uTexture;
+uniform vec2  uTexelSize;
+uniform float uThreshold;
+
+void main()
+{
+    vec3 a = texture( uTexture, vUV + vec2(-uTexelSize.x, -uTexelSize.y)).rgb;
+    vec3 b = texture( uTexture, vUV + vec2( uTexelSize.x, -uTexelSize.y)).rgb;
+    vec3 c = texture( uTexture, vUV + vec2(-uTexelSize.x, uTexelSize.y)).rgb;
+    vec3 d = texture( uTexture, vUV + vec2( uTexelSize.x, uTexelSize.y)).rgb;
+
+    vec3 color =  (a + b + c + d) * 0.25;
+    float luma =  dot(  color,  vec3(0.299, 0.587, 0.114)   );
+
+    // ========================================================
+    // [OPT]
+    // soft threshold
+    // ========================================================
+
+    float knee = 0.5;
+    float soft =  clamp(  (luma - uThreshold + knee) /  (2.0 * knee),  0.0,  1.0   );
+    soft = soft * soft * (3.0 - 2.0 * soft);
+    color *= soft;
+
+    FragColor =  vec4(color, 1.0);
+}
+)glsl";
+
 // Bloom 降采样
 static constexpr const char* kBloomDownFrag = R"glsl(
 #version 430 core
@@ -43,6 +77,43 @@ void main()
     color *= scale;
 
     FragColor = vec4(color, 1.0);
+}
+)glsl";
+
+// GPT Bloom 升采样， 柔和一些，最高点没有那么亮
+static constexpr const char* kBloomUpFrag2 = R"glsl(
+#version 430 core
+
+in vec2 vUV;
+
+out vec4 FragColor;
+
+uniform sampler2D uSource;
+
+uniform vec2 uTexelSize;
+
+void main()
+{
+    float x = uTexelSize.x;
+    float y = uTexelSize.y;
+
+    vec3 result = vec3(0.0);
+
+    result += texture(uSource, vUV + vec2(-x, -y)).rgb * 1.0;
+    result += texture(uSource, vUV + vec2( 0, -y)).rgb * 2.0;
+    result += texture(uSource, vUV + vec2( x, -y)).rgb * 1.0;
+
+    result += texture(uSource, vUV + vec2(-x,  0)).rgb * 2.0;
+    result += texture(uSource, vUV).rgb* 4.0;
+    result += texture(uSource, vUV + vec2( x,  0)).rgb * 2.0;
+
+    result += texture(uSource, vUV + vec2(-x,  y)).rgb * 1.0;
+    result += texture(uSource, vUV + vec2( 0,  y)).rgb * 2.0;
+    result += texture(uSource, vUV + vec2( x,  y)).rgb * 1.0;
+
+    result /= 16.0;
+
+    FragColor = vec4(result, 1.0);
 }
 )glsl";
 
@@ -90,7 +161,7 @@ out vec4 FragColor;
 
 uniform sampler2D uScene;
 uniform sampler2D uBloom;
-uniform float     uBloomStrength;
+uniform float uBloomStrength;
 
 
 void main()
