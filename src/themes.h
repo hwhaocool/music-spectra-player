@@ -13,9 +13,9 @@ struct ThemeDefaults {
     static constexpr const char* kParticleFrag = kDefaultParticleFrag;
 };
 
-#include "theme_v/theme_bars.h"
-#include "theme_v/theme_aura.h"
-#include "theme_v/theme_gpt.h"
+#include "shaders/theme_bars/theme_bars.h"
+#include "shaders/theme_aura/theme_aura.h"
+#include "shaders/theme_gpt/theme_gpt.h"
 
 struct Theme {
     const char* name;

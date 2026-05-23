@@ -64,6 +64,7 @@ add_executable(${PROJECT_NAME}
     src/vis.cpp
     src/bloom.cpp
     src/particles.cpp
+    src/vortex.cpp
     src/playlist.cpp
     src/ui.cpp
     src/app.cpp
@@ -85,10 +86,66 @@ if(WIN32)
     target_link_libraries(${PROJECT_NAME} PRIVATE dwmapi)
 endif()
 
-# 复制着色器到构建目录
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_SOURCE_DIR}/shaders $<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders)
+# ── 从着色器源文件生成主题头文件 ──────────────────────
+# 自动遍历 src/shaders/*/theme.cfg，每个子文件夹是一个主题
+# theme.cfg 格式（3行）：struct名 / 显示名 / 基类
+
+file(GLOB THEME_CFG_FILES "${CMAKE_SOURCE_DIR}/src/shaders/*/theme.cfg")
+
+foreach(THEME_CFG ${THEME_CFG_FILES})
+    get_filename_component(THEME_DIR "${THEME_CFG}" DIRECTORY)
+    get_filename_component(THEME_DIRNAME "${THEME_DIR}" NAME)
+
+    file(STRINGS "${THEME_CFG}" CFG_LINES)
+    list(GET CFG_LINES 0 THEME_NAMESPACE)
+    list(GET CFG_LINES 1 THEME_DISPLAY_NAME)
+    list(GET CFG_LINES 2 THEME_BASE)
+
+    set(THEME_HEADER "${THEME_DIR}/${THEME_DIRNAME}.h")
+
+    # 按约定映射着色器文件 → 变量名
+    set(SHADER_DEFS "")
+    set(SHADER_DEPS  "")
+    foreach(PAIR
+            "vis.vert|kVert"
+            "vis.frag|kFrag"
+            "particle.vert|kParticleVert"
+            "particle.frag|kParticleFrag")
+        string(REPLACE "|" ";" KV "${PAIR}")
+        list(GET KV 0 SHADER_FILE)
+        list(GET KV 1 VAR_NAME)
+        set(SHADER_PATH "${THEME_DIR}/${SHADER_FILE}")
+        if(EXISTS "${SHADER_PATH}")
+            list(APPEND SHADER_DEFS "${VAR_NAME}=${SHADER_PATH}")
+            list(APPEND SHADER_DEPS  "${SHADER_PATH}")
+        endif()
+    endforeach()
+
+    list(JOIN SHADER_DEFS ";" SHADERS_STR)
+
+    add_custom_command(
+        OUTPUT "${THEME_HEADER}"
+        COMMAND ${CMAKE_COMMAND}
+            "-DOUTPUT=${THEME_HEADER}"
+            "-DNAMESPACE=${THEME_NAMESPACE}"
+            "-DNAME=${THEME_DISPLAY_NAME}"
+            "-DBASE=${THEME_BASE}"
+            "-DSHADERS=${SHADERS_STR}"
+            -P "${CMAKE_SOURCE_DIR}/cmake/generate_theme_header.cmake"
+        DEPENDS
+            ${SHADER_DEPS}
+            "${CMAKE_SOURCE_DIR}/cmake/generate_theme_header.cmake"
+            "${THEME_CFG}"
+        COMMENT "Generating theme header: ${THEME_DIRNAME}.h"
+    )
+
+    list(APPEND ALL_GENERATED_HEADERS "${THEME_HEADER}")
+endforeach()
+
+if(ALL_GENERATED_HEADERS)
+    add_custom_target(generate_theme_headers DEPENDS ${ALL_GENERATED_HEADERS})
+    add_dependencies(${PROJECT_NAME} generate_theme_headers)
+endif()
 
 # 静态链接
 target_link_options(${PROJECT_NAME} PRIVATE -static)
