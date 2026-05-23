@@ -16,6 +16,7 @@ out vec2  vUV;
 out float vMagnitude;
 out float vNormAngle;
 
+// 可视化顶点 Shader
 void main()
 {
     vUV        = aPos;

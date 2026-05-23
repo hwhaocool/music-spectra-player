@@ -182,6 +182,8 @@ void main()
 )glsl";
 
 // 默认粒子顶点（主题可覆写）
+// 粒子顶点 Shader
+// 粒子动态大小
 static constexpr const char* kDefaultParticleVert = R"glsl(
 #version 430 core
 // default
