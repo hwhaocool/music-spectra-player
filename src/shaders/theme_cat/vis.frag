@@ -18,32 +18,41 @@ vec3 hsv2rgb(vec3 c)
 
 void main()
 {
-    // 暖琥珀色身体，耳朵偏粉
-    float hue = mix(0.105, 0.06, vIsEar);   // 琥珀 → 粉
-    hue += sin(uTime * 0.35 + vNormAngle * 6.28) * 0.015;
+    // ── 霓虹渐变：橘 → 粉 → 紫，环绕猫轮廓 ──
+    // hue 从 0.08 (橘) 递减穿过 0.93 (粉) 到 0.78 (紫)，fract 自动处理环绕
+    float hue = 0.08
+              - vNormAngle * 0.30             // 橘→粉→紫
+              + vIsEar * 0.04                 // 耳朵偏粉
+              + sin(uTime * 0.45 + vNormAngle * 7.5) * 0.025;
 
-    float sat = mix(0.70, 0.55, vIsEar);
-    vec3 color = hsv2rgb(vec3(fract(hue), sat, 1.0));
+    float sat = 0.92 - vIsEar * 0.15;
+    float val = 2.2;                          // HDR 高亮
+    vec3 neon = hsv2rgb(vec3(fract(hue), sat, val));
 
     // 亮度随频谱强度变化
-    float brightness = 0.30 + vMagnitude * 0.70;
-    color *= brightness;
+    neon *= 0.45 + vMagnitude * 1.1;
 
-    // 耳朵内侧微光
-    color += color * vIsEar * (1.0 - abs(vUV.y - 0.5) * 2.0) * 0.45;
+    // 条柱中心辉光
+    float centerGlow = pow(1.0 - abs(vUV.x - 0.5) * 2.0, 3.5);
+    neon += neon * centerGlow * 1.3;
 
-    // 条柱中心高光
-    float hot = 1.0 - abs(vUV.x - 0.5) * 2.0;
-    hot = pow(hot, 2.5);
-    color += color * hot * 0.25;
+    // 外边缘 bloom
+    float edgeGlow = smoothstep(0.55, 1.0, vUV.y);
+    neon += neon * edgeGlow * 0.7;
 
-    // 微弱脉动
-    color *= 0.94 + 0.06 * sin(uTime * 2.3 + vNormAngle * 12.57);
+    // 耳朵内侧高亮
+    float earInner = (1.0 - abs(vUV.y - 0.5) * 2.0);
+    earInner = pow(earInner, 1.8);
+    neon += neon * vIsEar * earInner * 0.55;
+
+    // 动态 flicker
+    float flicker = sin(uTime * 13.0 + vNormAngle * 28.0) * 0.035;
+    neon *= 1.0 + flicker;
 
     // 边缘柔化
-    float alpha  = smoothstep(0.0, 0.09, vUV.x) * smoothstep(1.0, 0.91, vUV.x);
-    alpha       *= smoothstep(0.0, 0.10, vUV.y) * smoothstep(1.0, 0.90, vUV.y);
-    alpha       *= 0.22 + vMagnitude * 0.78;
+    float alpha  = smoothstep(0.0, 0.07, vUV.x) * smoothstep(1.0, 0.93, vUV.x);
+    alpha       *= smoothstep(0.0, 0.08, vUV.y) * smoothstep(1.0, 0.94, vUV.y);
+    alpha       *= 0.18 + vMagnitude * 0.82;
 
-    FragColor = vec4(color, alpha);
+    FragColor = vec4(neon, alpha);
 }
