@@ -7,6 +7,7 @@
 #include <imgui_impl_opengl3.h>
 #include <GLFW/glfw3.h>
 #include <cstdio>
+#include <cstring>
 #include "IconsFontAwesome6.h"
 #include "assets/font-inter/Inter-Regular.h"
 #include "assets/font-awesome/fa-solid-900.h"
@@ -434,11 +435,51 @@ void UI::drawLeftPanel(App& app, float winW, float winH)
     // ImGui::Separator();
     // ImGui::Spacing();
 
-    // ── 播放列表标题行 ──
-    ImGui::Text("播放列表");
-    ImGui::SameLine(ImGui::GetWindowWidth() - 60.f);
-    if (ImGui::SmallButton("清除"))
-        app.playlist().clear();
+    // ── 播放列表选择器 ──
+    {
+        auto plNames = app.playlist().listPlaylistNames();
+        std::string currentPlName = app.playlist().currentName();
+
+        float btnW = 52.f;
+        ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - btnW - 12.f);
+        if (ImGui::BeginCombo("##playlistCombo", currentPlName.c_str())) {
+            for (int i = 0; i < (int)plNames.size(); ++i) {
+                bool isSelected = (plNames[i] == currentPlName);
+                if (ImGui::Selectable(plNames[i].c_str(), isSelected))
+                    app.playlist().switchToPlaylist(plNames[i]);
+                if (isSelected)
+                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        ImGui::SameLine();
+        if (ImGui::SmallButton("新增")) {
+            ImGui::OpenPopup("新建播放列表###newPlaylistPopup");
+            memset(newPlaylistNameBuf_, 0, sizeof(newPlaylistNameBuf_));
+        }
+
+        // 新建播放列表弹窗
+        if (ImGui::BeginPopupModal("新建播放列表###newPlaylistPopup", nullptr,
+                                   ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("输入播放列表名称:");
+            ImGui::InputText("##newPlaylistName", newPlaylistNameBuf_,
+                             sizeof(newPlaylistNameBuf_));
+            bool confirmed = ImGui::Button("确定", ImVec2(100, 0));
+            ImGui::SameLine();
+            if (ImGui::Button("取消", ImVec2(100, 0)))
+                ImGui::CloseCurrentPopup();
+            if (confirmed) {
+                std::string name(newPlaylistNameBuf_);
+                if (!name.empty()) {
+                    app.playlist().createPlaylist(name);
+                    app.playlist().switchToPlaylist(name);
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            ImGui::EndPopup();
+        }
+    }
     ImGui::Separator();
 
     // ── 播放列表滚动区域 ──

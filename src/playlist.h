@@ -23,7 +23,6 @@ public:
     int  currentIndex()           const { return current_; }
     void setCurrent(int i)              { current_ = i; }
 
-    // 返回下一首的索引，-1 表示没有
     int  next() {
         if (entries_.empty()) return -1;
         current_ = (current_ + 1) % (int)entries_.size();
@@ -37,7 +36,21 @@ public:
 
     const std::vector<Entry>& entries() const { return entries_; }
 
+    // ── 播放列表文件管理 ──
+    void init(const std::string& exeDir);
+    const std::string& currentName() const { return currentPlaylistName_; }
+    std::vector<std::string> listPlaylistNames() const;
+    void switchToPlaylist(const std::string& name);
+    void createPlaylist(const std::string& name);
+    void saveToFile() const;
+    void appendSongToFile(const std::string& songPath);
+
 private:
+    void loadFromFile(const std::string& name);
+
     std::vector<Entry> entries_;
     int                current_ = 0;
+
+    std::string playlistDir_;
+    std::string currentPlaylistName_;
 };

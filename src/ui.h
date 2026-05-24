@@ -25,6 +25,8 @@ private:
     float volumeSlider_    = 0.8f;
     bool  showSettings_    = false;
 
+    char  newPlaylistNameBuf_[128] = {};
+
     // 布局常量
     float leftPanelWidth_  = 280.f;
     float controlsHeight_  = 110.f;

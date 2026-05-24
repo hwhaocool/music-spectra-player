@@ -64,9 +64,13 @@ bool App::init(int w, int h)
     lastVpW_ = initVpW;
     lastVpH_ = initVpH;
 
-    // 添加示例播放列表
-    playlist_.addFile("example.mp3");
-    playlist_.addFile("X:\\01.wav");
+    // ── 播放列表：从 exe 目录下的 playlist/ 加载 ──
+    {
+        char exePathBuf[MAX_PATH];
+        GetModuleFileNameA(nullptr, exePathBuf, MAX_PATH);
+        fs::path exePath(exePathBuf);
+        playlist_.init(exePath.parent_path().string());
+    }
 
     // 默认背景
     glClearColor(kClearColor[0], kClearColor[1], kClearColor[2], kClearColor[3]);
@@ -197,6 +201,7 @@ void App::run()
 
 void App::shutdown()
 {
+    playlist_.saveToFile();
     audio_.shutdown();
     vis_.destroy();
     bloom_.destroy();
@@ -237,7 +242,7 @@ void App::processDrop()
         if (ext == ".mp3" || ext == ".wav" ||
             ext == ".ogg" || ext == ".flac") {
             playlist_.addFile(p);
-            // 修复：用原始 UTF-8 字符串直接输出（配合 setupConsoleUtf8）
+            playlist_.appendSongToFile(p);
             std::cout << "[Drop] Added: " << p << "\n";
         } else {
             std::cout << "[Drop] Skipped (unsupported): " << p << "\n";
