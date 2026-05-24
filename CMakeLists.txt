@@ -56,18 +56,12 @@ set(GLAD_DIR ${CMAKE_SOURCE_DIR}/third_party/glad)
 # ── miniaudio (单头文件) ─────────────────────────────
 set(MINIAUDIO_DIR ${CMAKE_SOURCE_DIR}/third_party/miniaudio)
 
+# ── 自动收集 src 下所有源文件 ──────────────────────────
+file(GLOB_RECURSE SRC_SOURCES "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/src/*.c")
+
 # ── 可执行文件 ────────────────────────────────────────
 add_executable(${PROJECT_NAME}
-    src/main.cpp
-    src/fft.cpp
-    src/audio_engine.cpp
-    src/vis.cpp
-    src/bloom.cpp
-    src/particles.cpp
-    src/vortex.cpp
-    src/playlist.cpp
-    src/ui.cpp
-    src/app.cpp
+    ${SRC_SOURCES}
     ${GLAD_DIR}/src/glad.c
     ${IMGUI_SOURCES})
 
