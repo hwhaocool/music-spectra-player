@@ -348,7 +348,7 @@ void UI::drawTitleBar(App& app, float winW, float winH)
     if (ImGui::IsItemClicked())
         glfwIconifyWindow(window_);
 
-    // --- Theme toggle (在最小化左边) ---
+    // --- Theme popup (在最小化左边) ---
     float tx = minx - btnW;
     ImGui::SetCursorScreenPos(ImVec2(tx, wPos.y));
     ImGui::InvisibleButton("##theme", ImVec2(btnW, barH));
@@ -358,11 +358,20 @@ void UI::drawTitleBar(App& app, float winW, float winH)
     draw->AddText(ImVec2(tx + 13.f, wPos.y + 14.f),
                   ImGui::IsItemHovered() ? IM_COL32(200, 150, 255, 255) : IM_COL32(160, 120, 200, 255),
                   ICON_FA_PALETTE);
-    if (ImGui::IsItemClicked()) {
-        int next = (app.vis().currentTheme_ + 1) % kThemeCount;
-        printf("==== 开始加载主题=%s\n", kThemes[next].name);
-        app.vis().setTheme(next);
-        app.particles().setShaders(kThemes[next].particleVert, kThemes[next].particleFrag);
+    if (ImGui::IsItemClicked())
+        ImGui::OpenPopup("##theme_popup");
+
+    if (ImGui::BeginPopup("##theme_popup")) {
+        for (int i = 0; i < kThemeCount; ++i) {
+            bool selected = (i == app.vis().currentTheme_);
+            if (ImGui::Selectable(kThemes[i].name, selected)) {
+                app.vis().setTheme(i);
+                app.particles().setShaders(kThemes[i].particleVert, kThemes[i].particleFrag);
+            }
+            if (selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndPopup();
     }
 
     // ── 窗口拖拽（非按钮区域，用原始鼠标坐标避免闪动）──
