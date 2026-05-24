@@ -21,6 +21,9 @@ third_party/
 .DS_Store
 Thumbs.db
 
+# Generated theme headers (built from .vert/.frag source files)
+src/shaders/*/theme_*.h
+
 # CMake
 CMakeFiles/
 CMakeCache.txt
