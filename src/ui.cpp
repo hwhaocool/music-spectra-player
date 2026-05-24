@@ -129,11 +129,24 @@ bool UI::init(void* glfwWin)
 
     ImGui_ImplGlfw_InitForOpenGL(static_cast<GLFWwindow*>(glfwWin), true);
     ImGui_ImplOpenGL3_Init("#version 430");
+
+    cursorArrow_ = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+    cursorNS_    = glfwCreateStandardCursor(GLFW_RESIZE_NS_CURSOR);
+    cursorEW_    = glfwCreateStandardCursor(GLFW_RESIZE_EW_CURSOR);
+    cursorNWSE_  = glfwCreateStandardCursor(GLFW_RESIZE_NWSE_CURSOR);
+    cursorNESW_  = glfwCreateStandardCursor(GLFW_RESIZE_NESW_CURSOR);
+
     return true;
 }
 
 void UI::shutdown()
 {
+    if (cursorArrow_) glfwDestroyCursor(cursorArrow_);
+    if (cursorNS_)    glfwDestroyCursor(cursorNS_);
+    if (cursorEW_)    glfwDestroyCursor(cursorEW_);
+    if (cursorNWSE_)  glfwDestroyCursor(cursorNWSE_);
+    if (cursorNESW_)  glfwDestroyCursor(cursorNESW_);
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -154,6 +167,79 @@ void UI::endFrame()
 {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+// ==========================================================
+//  窗口边缘拖拽调整大小
+// ==========================================================
+
+void UI::handleWindowResize(int winW, int winH)
+{
+    constexpr float kEdgeSize = 8.f;
+
+    double mx, my;
+    glfwGetCursorPos(window_, &mx, &my);
+
+    bool nearLeft   = (mx >= 0 && mx <= kEdgeSize);
+    bool nearRight  = (mx <= winW && mx >= winW - kEdgeSize);
+    bool nearTop    = (my >= 0 && my <= kEdgeSize);
+    bool nearBottom = (my <= winH && my >= winH - kEdgeSize);
+
+    int edge = 0;
+    if (nearLeft)   edge |= 1;
+    if (nearRight)  edge |= 2;
+    if (nearTop)    edge |= 4;
+    if (nearBottom) edge |= 8;
+
+    bool leftDown = glfwGetMouseButton(window_, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+
+    if (!resizing_) {
+        if (edge == 0) {
+            glfwSetCursor(window_, cursorArrow_);
+            return;
+        }
+        // 设置光标形状
+        if (edge == 4 || edge == 8)            glfwSetCursor(window_, cursorNS_);   // 上下
+        else if (edge == 1 || edge == 2)        glfwSetCursor(window_, cursorEW_);   // 左右
+        else if (edge == 5 || edge == 10)       glfwSetCursor(window_, cursorNWSE_); // 左上/右下
+        else if (edge == 6 || edge == 9)        glfwSetCursor(window_, cursorNESW_); // 右上/左下
+
+        if (leftDown) {
+            resizing_ = true;
+            resizeEdge_ = edge;
+            glfwGetCursorPos(window_, &resizeStartX_, &resizeStartY_);
+            glfwGetWindowSize(window_, &resizeStartW_, &resizeStartH_);
+            glfwGetWindowPos(window_, &resizeStartPosX_, &resizeStartPosY_);
+        }
+    } else {
+        if (leftDown) {
+            double dx = mx - resizeStartX_;
+            double dy = my - resizeStartY_;
+
+            int newW = resizeStartW_;
+            int newH = resizeStartH_;
+            int newX = resizeStartPosX_;
+            int newY = resizeStartPosY_;
+
+            if (resizeEdge_ & 1) { newW = resizeStartW_ - (int)dx;  newX = resizeStartPosX_ + (int)dx; }
+            if (resizeEdge_ & 2) { newW = resizeStartW_ + (int)dx; }
+            if (resizeEdge_ & 4) { newH = resizeStartH_ - (int)dy;  newY = resizeStartPosY_ + (int)dy; }
+            if (resizeEdge_ & 8) { newH = resizeStartH_ + (int)dy; }
+
+            int minW = (int)App::kLeftPanelW + 200;
+            int minH = (int)App::kTitleBarH + (int)App::kControlsH + 100;
+            if (newW < minW) newW = minW;
+            if (newH < minH) newH = minH;
+
+            glfwSetWindowSize(window_, newW, newH);
+            if (resizeEdge_ & (1 | 4))
+                glfwSetWindowPos(window_, newX, newY);
+        } else {
+            resizing_ = false;
+            resizeEdge_ = 0;
+            glfwSetCursor(window_, cursorArrow_);
+        }
+    }
 }
 
 // ==========================================================

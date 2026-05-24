@@ -84,15 +84,16 @@ void App::run()
         glfwPollEvents();
         processDrop();
 
+        int winSizeW, winSizeH;
+        glfwGetWindowSize(window_, &winSizeW, &winSizeH);
+        ui_.handleWindowResize(winSizeW, winSizeH);
+
         float now = (float)glfwGetTime();
         float dt  = now - lastTime;
         lastTime  = now;
         time_     = now;
 
         // ── 窗口尺寸 ──
-        int winSizeW, winSizeH;
-        glfwGetWindowSize(window_, &winSizeW, &winSizeH);
-
         int fbW, fbH;
         glfwGetFramebufferSize(window_, &fbW, &fbH);
         if (fbW != winW_ || fbH != winH_) {
