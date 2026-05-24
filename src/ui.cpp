@@ -6,6 +6,12 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <GLFW/glfw3.h>
+
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <windows.h>
+#include <GLFW/glfw3native.h>
+#endif
 #include <cstdio>
 #include <cstring>
 #include "IconsFontAwesome6.h"
@@ -377,28 +383,15 @@ void UI::drawTitleBar(App& app, float winW, float winH)
         ImGui::EndPopup();
     }
 
-    // ── 窗口拖拽（非按钮区域，用原始鼠标坐标避免闪动）──
+    // ── 窗口拖拽（非按钮区域，使用原生 Windows 拖拽避免残影）──
     {
-        static bool dragActive = false;
-        static double dragOrgX, dragOrgY;
-        static int dragOrgWX, dragOrgWY;
-
         ImGui::SetCursorScreenPos(ImVec2(wPos.x, wPos.y));
         ImGui::InvisibleButton("##drag", ImVec2(tx - wPos.x, barH));
 
-        if (ImGui::IsItemActive() && !dragActive) {
-            dragActive = true;
-            glfwGetCursorPos(window_, &dragOrgX, &dragOrgY);
-            glfwGetWindowPos(window_, &dragOrgWX, &dragOrgWY);
-        }
-        if (dragActive) {
-            double mx, my;
-            glfwGetCursorPos(window_, &mx, &my);
-            glfwSetWindowPos(window_,
-                dragOrgWX + (int)(mx - dragOrgX),
-                dragOrgWY + (int)(my - dragOrgY));
-            if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
-                dragActive = false;
+        if (ImGui::IsItemActivated()) {
+            HWND hwnd = glfwGetWin32Window(window_);
+            ReleaseCapture();
+            SendMessageA(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
         }
     }
 
