@@ -3,9 +3,7 @@
 #
 # Parameters (passed via -D):
 #   OUTPUT    - Path to the output .h file
-#   NAMESPACE - C++ struct name (e.g. "theme_gpt")
-#   NAME      - Display name (e.g. "GPT")
-#   BASE      - Base struct to inherit from (e.g. "ThemeDefaults")
+#   THEME_CFG - Path to the theme.cfg file (read directly to avoid cmdline encoding issues)
 #   SHADERS   - Semicolon-separated list of "VARNAME=filepath" pairs
 #               (e.g. "kVert=vis.vert;kFrag=vis.frag")
 
@@ -14,14 +12,28 @@ message(STATUS "==start")
 if(NOT OUTPUT)
     message(FATAL_ERROR "OUTPUT is required")
 endif()
+if(NOT THEME_CFG)
+    message(FATAL_ERROR "THEME_CFG is required")
+endif()
+
+# Read theme.cfg directly to avoid command-line encoding issues with non-ASCII names
+file(STRINGS "${THEME_CFG}" CFG_LINES ENCODING UTF-8)
+list(GET CFG_LINES 0 NAMESPACE)
+list(GET CFG_LINES 1 NAME)
+list(GET CFG_LINES 2 BASE)
+
+message(STATUS "NAMESPACE=[${NAMESPACE}]")
+message(STATUS "NAME=[${NAME}]")
+message(STATUS "BASE=[${BASE}]")
+
 if(NOT NAMESPACE)
-    message(FATAL_ERROR "NAMESPACE is required")
+    message(FATAL_ERROR "NAMESPACE is required (line 1 of theme.cfg)")
 endif()
 if(NOT NAME)
-    message(FATAL_ERROR "NAME is required")
+    message(FATAL_ERROR "${NAMESPACE} NAME is required (line 2 of theme.cfg)")
 endif()
 if(NOT BASE)
-    message(FATAL_ERROR "BASE is required")
+    message(FATAL_ERROR "BASE is required (line 3 of theme.cfg)")
 endif()
 
 # Write header
