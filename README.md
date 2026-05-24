@@ -3,6 +3,8 @@
 
 ## 截图
 
+![cat](snaptshot/theme_cat.png)
+
 ![shot-1](snaptshot/shot-1.png)
 
 
