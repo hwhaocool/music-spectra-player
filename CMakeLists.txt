@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
-project(MusicVisualizer LANGUAGES C CXX)
-set(PROJECT_NAME MusicVisualizer)
+project(Music-Spectra-Player LANGUAGES C CXX)
+set(PROJECT_NAME Music-Spectra-Player)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -64,6 +64,11 @@ add_executable(${PROJECT_NAME}
     ${SRC_SOURCES}
     ${GLAD_DIR}/src/glad.c
     ${IMGUI_SOURCES})
+
+# Debug 显示控制台方便调试，Release/Minsizerel 隐藏控制台
+if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+    set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
+endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     src
