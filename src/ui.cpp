@@ -300,7 +300,9 @@ void UI::drawTitleBar(App& app, float winW, float winH)
 
     // 标题
     draw->AddText(ImVec2(wPos.x + 16.f, wPos.y + 14.f),
-                  IM_COL32(180, 180, 200, 255), "Music Spectra Player");
+                  IM_COL32(241, 36, 186, 255), ICON_FA_MUSIC);
+    draw->AddText(ImVec2(wPos.x + 38.f, wPos.y + 14.f),
+                  IM_COL32(180, 100, 255, 255), "Music Spectra Player");
 
     // ── 右侧按钮 ──
     float rightX = wPos.x + wSize.x;
@@ -425,15 +427,6 @@ void UI::drawLeftPanel(App& app, float winW, float winH)
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(16.f, 16.f));
 
     ImGui::Begin("##LeftPanel", nullptr, flags);
-
-    // ── 标题区 ──
-    // ImGui::Text("MUSIC PLAYER");
-    // ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.45f, 0.45f, 0.55f, 1.f));
-    // ImGui::Text("Circular Visualizer");
-    // ImGui::PopStyleColor();
-    // ImGui::Spacing();
-    // ImGui::Separator();
-    // ImGui::Spacing();
 
     // ── 播放列表选择器 ──
     {
