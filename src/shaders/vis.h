@@ -14,7 +14,7 @@ struct BarInstance {
 class Visualizer {
 public:
     Visualizer() = default;
-    bool init(int fftSize = 1024, int numBars = 128);
+    bool init(int fftSize = 1024, int numBars = 200);
     void update(float dt, AudioEngine& audio);
     
     void draw(const float* projMatrix, float cx, float cy,
