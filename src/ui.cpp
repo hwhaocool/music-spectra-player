@@ -213,7 +213,7 @@ void UI::drawTitleBar(App& app, float winW, float winH)
 
     // 标题
     draw->AddText(ImVec2(wPos.x + 16.f, wPos.y + 14.f),
-                  IM_COL32(180, 180, 200, 255), "Yellow Music Player");
+                  IM_COL32(180, 180, 200, 255), "Music Spectra Player");
 
     // ── 右侧按钮 ──
     float rightX = wPos.x + wSize.x;
