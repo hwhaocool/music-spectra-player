@@ -507,20 +507,25 @@ void UI::drawLeftPanel(App& app, float winW, float winH)
                 app.playTrack(i);
             }
 
-            // 删除按钮（同一行右侧）
-            ImGui::SameLine(ImGui::GetWindowWidth() - 28.f);
-            ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0,0,0,0));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered,  ImVec4(0.6f,0.1f,0.1f,0.6f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive,   ImVec4(0.8f,0.1f,0.1f,0.8f));
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 0));
-            char btnId[16];
-            snprintf(btnId, sizeof(btnId), "X##%d", i);
-            if (ImGui::SmallButton(btnId)) {
-                pl.remove(i);
-                --i;
+            // 当前播放曲目紫色边框
+            if (selected) {
+                ImVec2 rMin = ImGui::GetItemRectMin();
+                ImVec2 rMax = ImGui::GetItemRectMax();
+                ImGui::GetWindowDrawList()->AddRect(rMin, rMax,
+                    IM_COL32(180, 100, 255, 255), 0.f, 0, 2.f);
             }
-            ImGui::PopStyleVar();
-            ImGui::PopStyleColor(3);
+
+            // 右键菜单
+            if (ImGui::BeginPopupContextItem("##songMenu")) {
+                if (ImGui::MenuItem("移除")) {
+                    pl.remove(i);
+                    --i;
+                    ImGui::EndPopup();
+                    ImGui::PopID();
+                    continue;
+                }
+                ImGui::EndPopup();
+            }
 
             ImGui::PopID();
         }
