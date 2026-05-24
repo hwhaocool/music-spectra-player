@@ -28,6 +28,16 @@ bool App::init(int w, int h)
         glfwTerminate(); return false;
     }
 
+    // 窗口居中
+    {
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        if (monitor) {
+            int mx, my, mw, mh;
+            glfwGetMonitorWorkarea(monitor, &mx, &my, &mw, &mh);
+            glfwSetWindowPos(window_, mx + (mw - w) / 2, my + (mh - h) / 2);
+        }
+    }
+
     glfwMakeContextCurrent(window_);
     glfwSwapInterval(1); // VSync
 
