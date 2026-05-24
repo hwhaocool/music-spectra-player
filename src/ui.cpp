@@ -8,6 +8,8 @@
 #include <GLFW/glfw3.h>
 #include <cstdio>
 #include "IconsFontAwesome6.h"
+#include "assets/font-inter/Inter-Regular.h"
+#include "assets/font-awesome/fa-solid-900.h"
 
 // ── 工具：格式化秒数为 mm:ss ──
 static void formatTime(char* buf, size_t len, float seconds)
@@ -27,9 +29,14 @@ void setupFonts()
     ImGuiIO& io = ImGui::GetIO();
 
     // 主字体
-    io.Fonts->AddFontFromFileTTF(
-        "third_party/fonts/Inter-Regular.ttf",
-        18.0f);
+    const bin2cpp::File & interRegularTtf = bin2cpp::getInterRegularTtfFile();
+    const char * buffer = interRegularTtf.getBuffer();
+
+    io.Fonts->AddFontFromMemoryTTF(
+        (void*)buffer,
+        interRegularTtf.getSize(),
+        18.0f
+    );
 
     // 合并中文字体（fallback 链）
     {
@@ -58,8 +65,12 @@ void setupFonts()
         cfg.MergeMode = true;
         cfg.PixelSnapH = true;
 
-        io.Fonts->AddFontFromFileTTF(
-            "third_party/fonts/fa-solid-900.ttf",
+        const bin2cpp::File & fa_solid_900_ttf = bin2cpp::getFasolid900TtfFile();
+        const char * buffer = fa_solid_900_ttf.getBuffer();
+
+        io.Fonts->AddFontFromMemoryTTF(
+            (void*)fa_solid_900_ttf.getBuffer(),
+            fa_solid_900_ttf.getSize(),
             16.0f,
             &cfg,
             icons_ranges);
