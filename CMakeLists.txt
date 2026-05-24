@@ -95,11 +95,6 @@ foreach(THEME_CFG ${THEME_CFG_FILES})
     get_filename_component(THEME_DIR "${THEME_CFG}" DIRECTORY)
     get_filename_component(THEME_DIRNAME "${THEME_DIR}" NAME)
 
-    file(STRINGS "${THEME_CFG}" CFG_LINES)
-    list(GET CFG_LINES 0 THEME_NAMESPACE)
-    list(GET CFG_LINES 1 THEME_DISPLAY_NAME)
-    list(GET CFG_LINES 2 THEME_BASE)
-
     set(THEME_HEADER "${THEME_DIR}/${THEME_DIRNAME}.h")
 
     # 按约定映射着色器文件 → 变量名
@@ -126,9 +121,7 @@ foreach(THEME_CFG ${THEME_CFG_FILES})
         OUTPUT "${THEME_HEADER}"
         COMMAND ${CMAKE_COMMAND}
             "-DOUTPUT=${THEME_HEADER}"
-            "-DNAMESPACE=${THEME_NAMESPACE}"
-            "-DNAME=${THEME_DISPLAY_NAME}"
-            "-DBASE=${THEME_BASE}"
+            "-DTHEME_CFG=${THEME_CFG}"
             "-DSHADERS=${SHADERS_STR}"
             -P "${CMAKE_SOURCE_DIR}/cmake/generate_theme_header.cmake"
         DEPENDS
