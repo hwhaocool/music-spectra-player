@@ -3,5 +3,5 @@
 ```
 
 git clone https://github.com/ocornut/imgui
-https://github.com/epezent/implot
+git clone https://github.com/epezent/implot
 ```
