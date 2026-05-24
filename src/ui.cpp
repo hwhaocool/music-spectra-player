@@ -455,28 +455,30 @@ void UI::drawLeftPanel(App& app, float winW, float winH)
 
         ImGui::SameLine();
         if (ImGui::SmallButton("新增")) {
+            showNewPlaylistPopup_ = true;
             ImGui::OpenPopup("新建播放列表###newPlaylistPopup");
             memset(newPlaylistNameBuf_, 0, sizeof(newPlaylistNameBuf_));
         }
 
         // 新建播放列表弹窗
-        if (ImGui::BeginPopupModal("新建播放列表###newPlaylistPopup", nullptr,
+        if (ImGui::BeginPopupModal("新建播放列表###newPlaylistPopup",
+                                   &showNewPlaylistPopup_,
                                    ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text("输入播放列表名称:");
+            ImGui::SetItemDefaultFocus();
             ImGui::InputText("##newPlaylistName", newPlaylistNameBuf_,
                              sizeof(newPlaylistNameBuf_));
-            bool confirmed = ImGui::Button("确定", ImVec2(100, 0));
-            ImGui::SameLine();
-            if (ImGui::Button("取消", ImVec2(100, 0)))
-                ImGui::CloseCurrentPopup();
-            if (confirmed) {
+            if (ImGui::Button("确定", ImVec2(100, 0))) {
                 std::string name(newPlaylistNameBuf_);
                 if (!name.empty()) {
                     app.playlist().createPlaylist(name);
                     app.playlist().switchToPlaylist(name);
-                    ImGui::CloseCurrentPopup();
+                    showNewPlaylistPopup_ = false;
                 }
             }
+            ImGui::SameLine();
+            if (ImGui::Button("取消", ImVec2(100, 0)))
+                showNewPlaylistPopup_ = false;
             ImGui::EndPopup();
         }
     }
@@ -682,8 +684,10 @@ void UI::drawControls(App& app, float winW, float winH)
         ImGuiWindowFlags_NoResize   |
         ImGuiWindowFlags_NoMove     |
         ImGuiWindowFlags_NoScrollbar|
+        ImGuiWindowFlags_NoBringToFrontOnFocus |
         ImGuiWindowFlags_NoBackground;
 
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
     ImGui::Begin("##controls", nullptr, flags);
 
     ImDrawList* draw = ImGui::GetWindowDrawList();
@@ -960,6 +964,7 @@ void UI::drawControls(App& app, float winW, float winH)
     //     title.c_str());
 
     ImGui::End();
+    ImGui::PopStyleVar();
 }
 
 // ==========================================================
